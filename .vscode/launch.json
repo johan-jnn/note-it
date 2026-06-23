@@ -1,0 +1,12 @@
+{
+  "configurations": [
+    {
+      "name": "Debug Nestjs Application",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:debug"],
+      "type": "node",
+      "console": "integratedTerminal"
+    }
+  ]
+}
