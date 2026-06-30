@@ -1,32 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, NotFoundException } from 'typeorm';
-import { LessonService } from './lessons.service';
+import { NotFoundException } from '@nestjs/common';
+import { LessonsService } from './lessons.service';
 import { Lesson } from './entities/lesson.entity';
-import { CreateLessonDto } from './dto/create-lessons.dto';
-import { UpdateLessonDto } from './dto/update-lessons.dto';
+import { CreateLessonDto } from './dto/create-lesson.dto';
+import { UpdateLessonDto } from './dto/update-lesson.dto';
 
-// Mock Lesson entity for testing
-const mockLesson: Lesson = {
+const mockLesson = {
   id: 1,
   name: 'Test Lesson',
   created_at: new Date(),
   updated_at: new Date(),
-};
+} as unknown as Lesson;
 
-const mockLessons: Lesson[] = [
+const mockLessons = [
   mockLesson,
   {
     id: 2,
-  name: 'Test Lesson',
+    name: 'Test Lesson 2',
     created_at: new Date(),
     updated_at: new Date(),
-  },
+  } as unknown as Lesson,
 ];
 
-describe('LessonService', () => {
-  let service: LessonService;
-  let repository: Repository<Lesson>;
+describe('LessonsService', () => {
+  let service: LessonsService;
 
   const mockRepository = {
     create: jest.fn(),
@@ -39,7 +37,7 @@ describe('LessonService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        LessonService,
+        LessonsService,
         {
           provide: getRepositoryToken(Lesson),
           useValue: mockRepository,
@@ -47,8 +45,7 @@ describe('LessonService', () => {
       ],
     }).compile();
 
-    service = module.get<LessonService>(LessonService);
-    repository = module.get<Repository<Lesson>>(getRepositoryToken(Lesson));
+    service = module.get<LessonsService>(LessonsService);
   });
 
   afterEach(() => {
@@ -61,13 +58,13 @@ describe('LessonService', () => {
 
   describe('create', () => {
     it('should create a new lesson', async () => {
-      const createDto: CreateLessonDto = {name?: string};
-      const expectedResult: Lesson = {
+      const createDto: CreateLessonDto = { name: 'New Lesson' };
+      const expectedResult = {
         id: 1,
-  name: 'Test Lesson',
+        name: 'New Lesson',
         created_at: new Date(),
         updated_at: new Date(),
-      };
+      } as unknown as Lesson;
 
       mockRepository.create.mockReturnValue(expectedResult);
       mockRepository.save.mockResolvedValue(expectedResult);
@@ -80,7 +77,7 @@ describe('LessonService', () => {
     });
 
     it('should throw an error if creation fails', async () => {
-      const createDto: CreateLessonDto = {name?: string};
+      const createDto: CreateLessonDto = { name: 'New Lesson' };
 
       mockRepository.create.mockReturnValue(mockLesson);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
@@ -121,22 +118,23 @@ describe('LessonService', () => {
     it('should throw NotFoundException if lesson not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne(999)).rejects.toThrow(
-        NotFoundException,
-      );
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 999 } });
+      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 999 },
+      });
     });
   });
 
   describe('update', () => {
     it('should update a lesson', async () => {
-      const updateDto: UpdateLessonDto = {name?: string};
-      const expectedResult: Lesson = {
-        ...mockLesson,
-        name:  string,
-      };
+      const updateDto: UpdateLessonDto = { name: 'Updated Lesson' };
+      const existingLesson = { ...mockLesson } as unknown as Lesson;
+      const expectedResult = {
+        ...existingLesson,
+        name: 'Updated Lesson',
+      } as unknown as Lesson;
 
-      mockRepository.findOne.mockResolvedValue(mockLesson);
+      mockRepository.findOne.mockResolvedValue(existingLesson);
       mockRepository.save.mockResolvedValue(expectedResult);
 
       const result = await service.update(1, updateDto);
@@ -147,7 +145,7 @@ describe('LessonService', () => {
     });
 
     it('should throw NotFoundException if lesson to update not found', async () => {
-      const updateDto: UpdateLessonDto = {name?: string};
+      const updateDto: UpdateLessonDto = { name: 'Updated Lesson' };
 
       mockRepository.findOne.mockResolvedValue(null);
 

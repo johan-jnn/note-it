@@ -1,29 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GradeController } from './grades.controller';
-import { GradeService } from './grades.service';
+import { GradesController } from './grades.controller';
+import { GradesService } from './grades.service';
 import { Grade } from './entities/grade.entity';
-import { CreateGradeDto } from './dto/create-grades.dto';
-import { UpdateGradeDto } from './dto/update-grades.dto';
+import { CreateGradeDto } from './dto/create-grade.dto';
+import { UpdateGradeDto } from './dto/update-grade.dto';
 import { NotFoundException } from '@nestjs/common';
 
-// Mock Grade entity for testing
-const mockGrade: Grade = {
+const mockGrade = {
   id: 1,
   value: 15,
-  max_value: 20,
+  comment: 'Good work',
   created_at: new Date(),
   updated_at: new Date(),
-};
+} as unknown as Grade;
 
-const mockGrades: Grade[] = [
+const mockGrades = [
   mockGrade,
   {
     id: 2,
-    value: 15,
-    max_value: 20,
+    value: 12,
+    comment: 'Average',
     created_at: new Date(),
     updated_at: new Date(),
-  },
+  } as unknown as Grade,
 ];
 
 const mockGradeService = {
@@ -34,23 +33,23 @@ const mockGradeService = {
   remove: jest.fn(),
 };
 
-describe('GradeController', () => {
-  let controller: GradeController;
-  let service: GradeService;
+describe('GradesController', () => {
+  let controller: GradesController;
+  let service: GradesService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [GradeController],
+      controllers: [GradesController],
       providers: [
         {
-          provide: GradeService,
+          provide: GradesService,
           useValue: mockGradeService,
         },
       ],
     }).compile();
 
-    controller = module.get<GradeController>(GradeController);
-    service = module.get<GradeService>(GradeService);
+    controller = module.get<GradesController>(GradesController);
+    service = module.get<GradesService>(GradesService);
   });
 
   afterEach(() => {
@@ -63,12 +62,11 @@ describe('GradeController', () => {
 
   describe('create', () => {
     it('should create a new grade', async () => {
-      const createDto: CreateGradeDto = { value: number, max_value: number };
+      const createDto: CreateGradeDto = { value: 15 };
 
       mockGradeService.create.mockResolvedValue({
         ...mockGrade,
-        value: number,
-        max_value: number,
+        value: 15,
       });
 
       const result = await controller.create(createDto);
@@ -76,8 +74,7 @@ describe('GradeController', () => {
       expect(service.create).toHaveBeenCalledWith(createDto);
       expect(result).toEqual({
         ...mockGrade,
-        value: number,
-        max_value: number,
+        value: 15,
       });
     });
   });
@@ -114,11 +111,10 @@ describe('GradeController', () => {
 
   describe('update', () => {
     it('should update a grade', async () => {
-      const updateDto: UpdateGradeDto = { value: number, max_value: number };
-      const expectedResult: Grade = {
+      const updateDto: UpdateGradeDto = { value: 18 };
+      const expectedResult = {
         ...mockGrade,
-        value: number,
-        max_value: number,
+        value: 18,
       };
 
       mockGradeService.update.mockResolvedValue(expectedResult);
@@ -130,7 +126,7 @@ describe('GradeController', () => {
     });
 
     it('should throw NotFoundException if grade to update not found', async () => {
-      const updateDto: UpdateGradeDto = { value: number, max_value: number };
+      const updateDto: UpdateGradeDto = { value: 18 };
 
       mockGradeService.update.mockRejectedValue(
         new NotFoundException('Grade not found'),

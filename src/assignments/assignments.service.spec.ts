@@ -1,32 +1,38 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, NotFoundException } from 'typeorm';
-import { AssignmentService } from './assignments.service';
+import { NotFoundException } from '@nestjs/common';
+import { AssignmentsService } from './assignments.service';
 import { Assignment } from './entities/assignment.entity';
-import { CreateAssignmentDto } from './dto/create-assignments.dto';
-import { UpdateAssignmentDto } from './dto/update-assignments.dto';
+import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 
-// Mock Assignment entity for testing
-const mockAssignment: Assignment = {
+const mockAssignment = {
   id: 1,
-  description: 'Test Description',
+  title: 'Test Assignment',
+  begin_date: null,
+  end_date: null,
+  scale: 20,
+  coefficient: 1,
   created_at: new Date(),
   updated_at: new Date(),
-};
+} as unknown as Assignment;
 
-const mockAssignments: Assignment[] = [
+const mockAssignments = [
   mockAssignment,
   {
     id: 2,
-    description: 'Test Description',
+    title: 'Test Assignment 2',
+    begin_date: null,
+    end_date: null,
+    scale: 20,
+    coefficient: 1,
     created_at: new Date(),
     updated_at: new Date(),
-  },
+  } as unknown as Assignment,
 ];
 
-describe('AssignmentService', () => {
-  let service: AssignmentService;
-  let repository: Repository<Assignment>;
+describe('AssignmentsService', () => {
+  let service: AssignmentsService;
 
   const mockRepository = {
     create: jest.fn(),
@@ -39,7 +45,7 @@ describe('AssignmentService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AssignmentService,
+        AssignmentsService,
         {
           provide: getRepositoryToken(Assignment),
           useValue: mockRepository,
@@ -47,10 +53,7 @@ describe('AssignmentService', () => {
       ],
     }).compile();
 
-    service = module.get<AssignmentService>(AssignmentService);
-    repository = module.get<Repository<Assignment>>(
-      getRepositoryToken(Assignment),
-    );
+    service = module.get<AssignmentsService>(AssignmentsService);
   });
 
   afterEach(() => {
@@ -63,13 +66,17 @@ describe('AssignmentService', () => {
 
   describe('create', () => {
     it('should create a new assignment', async () => {
-      const createDto: CreateAssignmentDto = { description: string };
-      const expectedResult: Assignment = {
+      const createDto: CreateAssignmentDto = {
+        title: 'New Assignment',
+        scale: 20,
+      };
+      const expectedResult = {
         id: 1,
-        description: 'Test Description',
+        title: 'New Assignment',
+        scale: 20,
         created_at: new Date(),
         updated_at: new Date(),
-      };
+      } as unknown as Assignment;
 
       mockRepository.create.mockReturnValue(expectedResult);
       mockRepository.save.mockResolvedValue(expectedResult);
@@ -82,7 +89,10 @@ describe('AssignmentService', () => {
     });
 
     it('should throw an error if creation fails', async () => {
-      const createDto: CreateAssignmentDto = { description: string };
+      const createDto: CreateAssignmentDto = {
+        title: 'New Assignment',
+        scale: 20,
+      };
 
       mockRepository.create.mockReturnValue(mockAssignment);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
@@ -132,13 +142,14 @@ describe('AssignmentService', () => {
 
   describe('update', () => {
     it('should update a assignment', async () => {
-      const updateDto: UpdateAssignmentDto = { description: string };
-      const expectedResult: Assignment = {
-        ...mockAssignment,
-        description: string,
+      const updateDto: UpdateAssignmentDto = { title: 'Updated Assignment' };
+      const existingAssignment = { ...mockAssignment };
+      const expectedResult = {
+        ...existingAssignment,
+        title: 'Updated Assignment',
       };
 
-      mockRepository.findOne.mockResolvedValue(mockAssignment);
+      mockRepository.findOne.mockResolvedValue(existingAssignment);
       mockRepository.save.mockResolvedValue(expectedResult);
 
       const result = await service.update(1, updateDto);
@@ -149,7 +160,7 @@ describe('AssignmentService', () => {
     });
 
     it('should throw NotFoundException if assignment to update not found', async () => {
-      const updateDto: UpdateAssignmentDto = { description: string };
+      const updateDto: UpdateAssignmentDto = { title: 'Updated Assignment' };
 
       mockRepository.findOne.mockResolvedValue(null);
 

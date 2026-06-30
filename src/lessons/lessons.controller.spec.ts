@@ -1,27 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LessonController } from './lessons.controller';
-import { LessonService } from './lessons.service';
+import { LessonsController } from './lessons.controller';
+import { LessonsService } from './lessons.service';
 import { Lesson } from './entities/lesson.entity';
-import { CreateLessonDto } from './dto/create-lessons.dto';
-import { UpdateLessonDto } from './dto/update-lessons.dto';
+import { CreateLessonDto } from './dto/create-lesson.dto';
+import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { NotFoundException } from '@nestjs/common';
 
-// Mock Lesson entity for testing
-const mockLesson: Lesson = {
+const mockLesson = {
   id: 1,
   name: 'Test Entity',
   created_at: new Date(),
   updated_at: new Date(),
-};
+} as unknown as Lesson;
 
-const mockLessons: Lesson[] = [
+const mockLessons = [
   mockLesson,
   {
     id: 2,
-    name: 'Test Entity',
+    name: 'Test Entity 2',
     created_at: new Date(),
     updated_at: new Date(),
-  },
+  } as unknown as Lesson,
 ];
 
 const mockLessonService = {
@@ -32,23 +31,23 @@ const mockLessonService = {
   remove: jest.fn(),
 };
 
-describe('LessonController', () => {
-  let controller: LessonController;
-  let service: LessonService;
+describe('LessonsController', () => {
+  let controller: LessonsController;
+  let service: LessonsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [LessonController],
+      controllers: [LessonsController],
       providers: [
         {
-          provide: LessonService,
+          provide: LessonsService,
           useValue: mockLessonService,
         },
       ],
     }).compile();
 
-    controller = module.get<LessonController>(LessonController);
-    service = module.get<LessonService>(LessonService);
+    controller = module.get<LessonsController>(LessonsController);
+    service = module.get<LessonsService>(LessonsService);
   });
 
   afterEach(() => {
@@ -61,11 +60,11 @@ describe('LessonController', () => {
 
   describe('create', () => {
     it('should create a new lesson', async () => {
-      const createDto: CreateLessonDto = { name?: string };
+      const createDto: CreateLessonDto = { name: 'New Lesson' };
 
       mockLessonService.create.mockResolvedValue({
         ...mockLesson,
-        name?: string,
+        name: 'New Lesson',
       });
 
       const result = await controller.create(createDto);
@@ -73,7 +72,7 @@ describe('LessonController', () => {
       expect(service.create).toHaveBeenCalledWith(createDto);
       expect(result).toEqual({
         ...mockLesson,
-        name?: string,
+        name: 'New Lesson',
       });
     });
   });
@@ -104,19 +103,17 @@ describe('LessonController', () => {
         new NotFoundException('Lesson not found'),
       );
 
-      await expect(controller.findOne(999)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
     it('should update a lesson', async () => {
-      const updateDto: UpdateLessonDto = { name?: string };
-      const expectedResult: Lesson = {
+      const updateDto: UpdateLessonDto = { name: 'Updated Lesson' };
+      const expectedResult = {
         ...mockLesson,
-        name?: string,
-      };
+        name: 'Updated Lesson',
+      } as unknown as Lesson;
 
       mockLessonService.update.mockResolvedValue(expectedResult);
 
@@ -127,7 +124,7 @@ describe('LessonController', () => {
     });
 
     it('should throw NotFoundException if lesson to update not found', async () => {
-      const updateDto: UpdateLessonDto = { name?: string };
+      const updateDto: UpdateLessonDto = { name: 'Updated Lesson' };
 
       mockLessonService.update.mockRejectedValue(
         new NotFoundException('Lesson not found'),
@@ -156,9 +153,7 @@ describe('LessonController', () => {
         new NotFoundException('Lesson not found'),
       );
 
-      await expect(controller.remove(999)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(controller.remove(999)).rejects.toThrow(NotFoundException);
     });
   });
 });

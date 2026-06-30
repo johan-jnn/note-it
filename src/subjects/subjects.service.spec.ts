@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, NotFoundException } from 'typeorm';
+import { NotFoundException } from '@nestjs/common';
 import { SubjectsService } from './subjects.service';
 import { Subject } from './entities/subject.entity';
 import { CreateSubjectDto } from './dto/create-subject.dto';
@@ -30,7 +30,6 @@ const mockSubjects: Subject[] = [
 
 describe('SubjectsService', () => {
   let service: SubjectsService;
-  let repository: Repository<Subject>;
 
   const mockRepository = {
     create: jest.fn(),
@@ -52,7 +51,6 @@ describe('SubjectsService', () => {
     }).compile();
 
     service = module.get<SubjectsService>(SubjectsService);
-    repository = module.get<Repository<Subject>>(getRepositoryToken(Subject));
   });
 
   afterEach(() => {

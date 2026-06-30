@@ -4,13 +4,13 @@ import appDatasource from '../database/sources/app.datasource';
 import localDatasource from '../database/sources/local.datasource';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AssignmentsModule } from './assignments/assignments.module';
 import { AuthModule } from './auth/auth.module';
 import { ClassesModule } from './classes/classes.module';
-import { SubjectsModule } from './subjects/subjects.module';
-import { LessonsModule } from './lessons/lessons.module';
-import { AssignmentsModule } from './assignments/assignments.module';
 import { GradesModule } from './grades/grades.module';
+import { LessonsModule } from './lessons/lessons.module';
 import { StaticModule } from './static/static.module';
+import { SubjectsModule } from './subjects/subjects.module';
 
 @Module({
   imports: [

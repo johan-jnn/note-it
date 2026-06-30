@@ -4,7 +4,6 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Class } from '../src/classes/entities/class.entity';
 
 const mockClassesRepository = {
@@ -22,9 +21,8 @@ describe('ClassesController (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
-      .overrideProvider(getRepositoryToken(Class), {
-        useValue: mockClassesRepository,
-      })
+      .overrideProvider(getRepositoryToken(Class))
+      .useValue(mockClassesRepository)
       .compile();
 
     app = moduleFixture.createNestApplication();

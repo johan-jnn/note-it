@@ -8,7 +8,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        rewrite: () => import.meta.env.VITE_API_ENDPOINT,
+        rewrite: (): string =>
+          (process.env as Record<string, string>).VITE_API_ENDPOINT,
         changeOrigin: true,
       },
     },

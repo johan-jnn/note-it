@@ -1,27 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AssignmentController } from './assignments.controller';
-import { AssignmentService } from './assignments.service';
+import { AssignmentsController } from './assignments.controller';
+import { AssignmentsService } from './assignments.service';
 import { Assignment } from './entities/assignment.entity';
-import { CreateAssignmentDto } from './dto/create-assignments.dto';
-import { UpdateAssignmentDto } from './dto/update-assignments.dto';
+import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { NotFoundException } from '@nestjs/common';
 
-// Mock Assignment entity for testing
-const mockAssignment: Assignment = {
+const mockAssignment = {
   id: 1,
-  description: 'Test Description',
+  title: 'Test Assignment',
+  begin_date: null,
+  end_date: null,
+  scale: 20,
+  coefficient: 1,
   created_at: new Date(),
   updated_at: new Date(),
-};
+} as unknown as Assignment;
 
-const mockAssignments: Assignment[] = [
+const mockAssignments = [
   mockAssignment,
   {
     id: 2,
-    description: 'Test Description',
+    title: 'Test Assignment 2',
+    begin_date: null,
+    end_date: null,
+    scale: 20,
+    coefficient: 1,
     created_at: new Date(),
     updated_at: new Date(),
-  },
+  } as unknown as Assignment,
 ];
 
 const mockAssignmentService = {
@@ -32,23 +39,23 @@ const mockAssignmentService = {
   remove: jest.fn(),
 };
 
-describe('AssignmentController', () => {
-  let controller: AssignmentController;
-  let service: AssignmentService;
+describe('AssignmentsController', () => {
+  let controller: AssignmentsController;
+  let service: AssignmentsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AssignmentController],
+      controllers: [AssignmentsController],
       providers: [
         {
-          provide: AssignmentService,
+          provide: AssignmentsService,
           useValue: mockAssignmentService,
         },
       ],
     }).compile();
 
-    controller = module.get<AssignmentController>(AssignmentController);
-    service = module.get<AssignmentService>(AssignmentService);
+    controller = module.get<AssignmentsController>(AssignmentsController);
+    service = module.get<AssignmentsService>(AssignmentsService);
   });
 
   afterEach(() => {
@@ -61,11 +68,14 @@ describe('AssignmentController', () => {
 
   describe('create', () => {
     it('should create a new assignment', async () => {
-      const createDto: CreateAssignmentDto = { description: string };
+      const createDto: CreateAssignmentDto = {
+        title: 'New Assignment',
+        scale: 20,
+      };
 
       mockAssignmentService.create.mockResolvedValue({
         ...mockAssignment,
-        description: string,
+        title: 'New Assignment',
       });
 
       const result = await controller.create(createDto);
@@ -73,7 +83,7 @@ describe('AssignmentController', () => {
       expect(service.create).toHaveBeenCalledWith(createDto);
       expect(result).toEqual({
         ...mockAssignment,
-        description: string,
+        title: 'New Assignment',
       });
     });
   });
@@ -110,10 +120,10 @@ describe('AssignmentController', () => {
 
   describe('update', () => {
     it('should update a assignment', async () => {
-      const updateDto: UpdateAssignmentDto = { description: string };
-      const expectedResult: Assignment = {
+      const updateDto: UpdateAssignmentDto = { title: 'Updated Assignment' };
+      const expectedResult = {
         ...mockAssignment,
-        description: string,
+        title: 'Updated Assignment',
       };
 
       mockAssignmentService.update.mockResolvedValue(expectedResult);
@@ -125,7 +135,7 @@ describe('AssignmentController', () => {
     });
 
     it('should throw NotFoundException if assignment to update not found', async () => {
-      const updateDto: UpdateAssignmentDto = { description: string };
+      const updateDto: UpdateAssignmentDto = { title: 'Updated Assignment' };
 
       mockAssignmentService.update.mockRejectedValue(
         new NotFoundException('Assignment not found'),

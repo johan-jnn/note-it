@@ -1,34 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, NotFoundException } from 'typeorm';
-import { GradeService } from './grades.service';
+import { NotFoundException } from '@nestjs/common';
+import { GradesService } from './grades.service';
 import { Grade } from './entities/grade.entity';
-import { CreateGradeDto } from './dto/create-grades.dto';
-import { UpdateGradeDto } from './dto/update-grades.dto';
+import { CreateGradeDto } from './dto/create-grade.dto';
+import { UpdateGradeDto } from './dto/update-grade.dto';
 
-// Mock Grade entity for testing
-const mockGrade: Grade = {
+const mockGrade = {
   id: 1,
   value: 15,
-  max_value: 20,
+  comment: 'Good work',
   created_at: new Date(),
   updated_at: new Date(),
-};
+} as unknown as Grade;
 
-const mockGrades: Grade[] = [
+const mockGrades = [
   mockGrade,
   {
     id: 2,
-    value: 15,
-    max_value: 20,
+    value: 12,
+    comment: 'Average',
     created_at: new Date(),
     updated_at: new Date(),
-  },
+  } as unknown as Grade,
 ];
 
-describe('GradeService', () => {
-  let service: GradeService;
-  let repository: Repository<Grade>;
+describe('GradesService', () => {
+  let service: GradesService;
 
   const mockRepository = {
     create: jest.fn(),
@@ -41,7 +39,7 @@ describe('GradeService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        GradeService,
+        GradesService,
         {
           provide: getRepositoryToken(Grade),
           useValue: mockRepository,
@@ -49,8 +47,7 @@ describe('GradeService', () => {
       ],
     }).compile();
 
-    service = module.get<GradeService>(GradeService);
-    repository = module.get<Repository<Grade>>(getRepositoryToken(Grade));
+    service = module.get<GradesService>(GradesService);
   });
 
   afterEach(() => {
@@ -63,14 +60,13 @@ describe('GradeService', () => {
 
   describe('create', () => {
     it('should create a new grade', async () => {
-      const createDto: CreateGradeDto = { value: number, max_value: number };
-      const expectedResult: Grade = {
+      const createDto: CreateGradeDto = { value: 15 };
+      const expectedResult = {
         id: 1,
         value: 15,
-        max_value: 20,
         created_at: new Date(),
         updated_at: new Date(),
-      };
+      } as unknown as Grade;
 
       mockRepository.create.mockReturnValue(expectedResult);
       mockRepository.save.mockResolvedValue(expectedResult);
@@ -83,7 +79,7 @@ describe('GradeService', () => {
     });
 
     it('should throw an error if creation fails', async () => {
-      const createDto: CreateGradeDto = { value: number, max_value: number };
+      const createDto: CreateGradeDto = { value: 15 };
 
       mockRepository.create.mockReturnValue(mockGrade);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
@@ -133,14 +129,14 @@ describe('GradeService', () => {
 
   describe('update', () => {
     it('should update a grade', async () => {
-      const updateDto: UpdateGradeDto = { value: number, max_value: number };
-      const expectedResult: Grade = {
-        ...mockGrade,
-        value: number,
-        max_value: number,
+      const updateDto: UpdateGradeDto = { value: 18 };
+      const existingGrade = { ...mockGrade };
+      const expectedResult = {
+        ...existingGrade,
+        value: 18,
       };
 
-      mockRepository.findOne.mockResolvedValue(mockGrade);
+      mockRepository.findOne.mockResolvedValue(existingGrade);
       mockRepository.save.mockResolvedValue(expectedResult);
 
       const result = await service.update(1, updateDto);
@@ -151,7 +147,7 @@ describe('GradeService', () => {
     });
 
     it('should throw NotFoundException if grade to update not found', async () => {
-      const updateDto: UpdateGradeDto = { value: number, max_value: number };
+      const updateDto: UpdateGradeDto = { value: 18 };
 
       mockRepository.findOne.mockResolvedValue(null);
 

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, NotFoundException } from 'typeorm';
+import { NotFoundException } from '@nestjs/common';
 import { ClassesService } from './classes.service';
 import { Class } from './entities/class.entity';
 import { CreateClassDto } from './dto/create-class.dto';
@@ -26,7 +26,6 @@ const mockClasses: Class[] = [
 
 describe('ClassesService', () => {
   let service: ClassesService;
-  let repository: Repository<Class>;
 
   const mockRepository = {
     create: jest.fn(),
@@ -48,7 +47,6 @@ describe('ClassesService', () => {
     }).compile();
 
     service = module.get<ClassesService>(ClassesService);
-    repository = module.get<Repository<Class>>(getRepositoryToken(Class));
   });
 
   afterEach(() => {
