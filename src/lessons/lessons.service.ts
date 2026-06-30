@@ -1,26 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { Lesson } from './entities/lesson.entity';
 
 @Injectable()
 export class LessonsService {
-  create(createLessonDto: CreateLessonDto) {
-    return 'This action adds a new lesson';
+  constructor(
+    @InjectRepository(Lesson)
+    private readonly lessonRepository: Repository<Lesson>,
+  ) {}
+
+  async create(createLessonDto: CreateLessonDto): Promise<Lesson> {
+    const newLesson = this.lessonRepository.create(createLessonDto);
+    return await this.lessonRepository.save(newLesson);
   }
 
-  findAll() {
-    return `This action returns all lessons`;
+  async findAll(): Promise<Lesson[]> {
+    return await this.lessonRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} lesson`;
+  async findOne(id: number): Promise<Lesson> {
+    const foundLesson = await this.lessonRepository.findOne({ where: { id } });
+    if (!foundLesson) {
+      throw new NotFoundException(`Lesson with ID ${id} not found`);
+    }
+    return foundLesson;
   }
 
-  update(id: number, updateLessonDto: UpdateLessonDto) {
-    return `This action updates a #${id} lesson`;
+  async update(id: number, updateLessonDto: UpdateLessonDto): Promise<Lesson> {
+    const existingLesson = await this.findOne(id);
+    Object.assign(existingLesson, updateLessonDto);
+    return await this.lessonRepository.save(existingLesson);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} lesson`;
+  async remove(id: number): Promise<void> {
+    const existingLesson = await this.findOne(id);
+    await this.lessonRepository.remove(existingLesson);
   }
 }

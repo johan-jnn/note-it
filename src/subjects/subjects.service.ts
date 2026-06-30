@@ -1,26 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
+import { Subject } from './entities/subject.entity';
 
 @Injectable()
 export class SubjectsService {
-  create(createSubjectDto: CreateSubjectDto) {
-    return 'This action adds a new subject';
+  constructor(
+    @InjectRepository(Subject)
+    private readonly subjectRepository: Repository<Subject>,
+  ) {}
+
+  async create(createSubjectDto: CreateSubjectDto): Promise<Subject> {
+    const newSubject = this.subjectRepository.create(createSubjectDto);
+    return await this.subjectRepository.save(newSubject);
   }
 
-  findAll() {
-    return `This action returns all subjects`;
+  async findAll(): Promise<Subject[]> {
+    return await this.subjectRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} subject`;
+  async findOne(id: number): Promise<Subject> {
+    const foundSubject = await this.subjectRepository.findOne({
+      where: { id },
+    });
+    if (!foundSubject) {
+      throw new NotFoundException(`Subject with ID ${id} not found`);
+    }
+    return foundSubject;
   }
 
-  update(id: number, updateSubjectDto: UpdateSubjectDto) {
-    return `This action updates a #${id} subject`;
+  async update(
+    id: number,
+    updateSubjectDto: UpdateSubjectDto,
+  ): Promise<Subject> {
+    const existingSubject = await this.findOne(id);
+    Object.assign(existingSubject, updateSubjectDto);
+    return await this.subjectRepository.save(existingSubject);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} subject`;
+  async remove(id: number): Promise<void> {
+    const existingSubject = await this.findOne(id);
+    await this.subjectRepository.remove(existingSubject);
   }
 }

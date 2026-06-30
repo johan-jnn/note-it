@@ -1,26 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
+import { Assignment } from './entities/assignment.entity';
 
 @Injectable()
 export class AssignmentsService {
-  create(createAssignmentDto: CreateAssignmentDto) {
-    return 'This action adds a new assignment';
+  constructor(
+    @InjectRepository(Assignment)
+    private readonly assignmentRepository: Repository<Assignment>,
+  ) {}
+
+  async create(createAssignmentDto: CreateAssignmentDto): Promise<Assignment> {
+    const newAssignment = this.assignmentRepository.create(createAssignmentDto);
+    return await this.assignmentRepository.save(newAssignment);
   }
 
-  findAll() {
-    return `This action returns all assignments`;
+  async findAll(): Promise<Assignment[]> {
+    return await this.assignmentRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} assignment`;
+  async findOne(id: number): Promise<Assignment> {
+    const foundAssignment = await this.assignmentRepository.findOne({
+      where: { id },
+    });
+    if (!foundAssignment) {
+      throw new NotFoundException(`Assignment with ID ${id} not found`);
+    }
+    return foundAssignment;
   }
 
-  update(id: number, updateAssignmentDto: UpdateAssignmentDto) {
-    return `This action updates a #${id} assignment`;
+  async update(
+    id: number,
+    updateAssignmentDto: UpdateAssignmentDto,
+  ): Promise<Assignment> {
+    const existingAssignment = await this.findOne(id);
+    Object.assign(existingAssignment, updateAssignmentDto);
+    return await this.assignmentRepository.save(existingAssignment);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} assignment`;
+  async remove(id: number): Promise<void> {
+    const existingAssignment = await this.findOne(id);
+    await this.assignmentRepository.remove(existingAssignment);
   }
 }

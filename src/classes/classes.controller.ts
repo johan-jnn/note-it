@@ -1,34 +1,50 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
+import { Class } from './entities/class.entity';
 
 @Controller('classes')
 export class ClassesController {
   constructor(private readonly classesService: ClassesService) {}
 
   @Post()
-  create(@Body() createClassDto: CreateClassDto) {
+  async create(@Body() createClassDto: CreateClassDto): Promise<Class> {
     return this.classesService.create(createClassDto);
   }
 
   @Get()
-  findAll() {
+  async findAll(): Promise<Class[]> {
     return this.classesService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.classesService.findOne(+id);
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Class> {
+    return this.classesService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateClassDto: UpdateClassDto) {
-    return this.classesService.update(+id, updateClassDto);
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateClassDto: UpdateClassDto,
+  ): Promise<Class> {
+    return this.classesService.update(id, updateClassDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.classesService.remove(+id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
+    await this.classesService.remove(id);
+    return { message: `Class with ID ${id} has been successfully deleted` };
   }
 }

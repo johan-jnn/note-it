@@ -10,6 +10,7 @@ import { SubjectsModule } from './subjects/subjects.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { GradesModule } from './grades/grades.module';
+import { StaticModule } from './static/static.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { GradesModule } from './grades/grades.module';
     LessonsModule,
     AssignmentsModule,
     GradesModule,
+    StaticModule,
   ],
   controllers: [AppController],
   providers: [AppService],

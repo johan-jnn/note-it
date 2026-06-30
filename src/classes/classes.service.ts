@@ -1,26 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
+import { Class } from './entities/class.entity';
 
 @Injectable()
 export class ClassesService {
-  create(createClassDto: CreateClassDto) {
-    return 'This action adds a new class';
+  constructor(
+    @InjectRepository(Class)
+    private readonly classRepository: Repository<Class>,
+  ) {}
+
+  async create(createClassDto: CreateClassDto): Promise<Class> {
+    const newClass = this.classRepository.create(createClassDto);
+    return await this.classRepository.save(newClass);
   }
 
-  findAll() {
-    return `This action returns all classes`;
+  async findAll(): Promise<Class[]> {
+    return await this.classRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} class`;
+  async findOne(id: number): Promise<Class> {
+    const foundClass = await this.classRepository.findOne({ where: { id } });
+    if (!foundClass) {
+      throw new NotFoundException(`Class with ID ${id} not found`);
+    }
+    return foundClass;
   }
 
-  update(id: number, updateClassDto: UpdateClassDto) {
-    return `This action updates a #${id} class`;
+  async update(id: number, updateClassDto: UpdateClassDto): Promise<Class> {
+    const existingClass = await this.findOne(id);
+    Object.assign(existingClass, updateClassDto);
+    return await this.classRepository.save(existingClass);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} class`;
+  async remove(id: number): Promise<void> {
+    const existingClass = await this.findOne(id);
+    await this.classRepository.remove(existingClass);
   }
 }

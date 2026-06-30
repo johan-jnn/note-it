@@ -1,26 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateGradeDto } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
+import { Grade } from './entities/grade.entity';
 
 @Injectable()
 export class GradesService {
-  create(createGradeDto: CreateGradeDto) {
-    return 'This action adds a new grade';
+  constructor(
+    @InjectRepository(Grade)
+    private readonly gradeRepository: Repository<Grade>,
+  ) {}
+
+  async create(createGradeDto: CreateGradeDto): Promise<Grade> {
+    const newGrade = this.gradeRepository.create(createGradeDto);
+    return await this.gradeRepository.save(newGrade);
   }
 
-  findAll() {
-    return `This action returns all grades`;
+  async findAll(): Promise<Grade[]> {
+    return await this.gradeRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} grade`;
+  async findOne(id: number): Promise<Grade> {
+    const foundGrade = await this.gradeRepository.findOne({ where: { id } });
+    if (!foundGrade) {
+      throw new NotFoundException(`Grade with ID ${id} not found`);
+    }
+    return foundGrade;
   }
 
-  update(id: number, updateGradeDto: UpdateGradeDto) {
-    return `This action updates a #${id} grade`;
+  async update(id: number, updateGradeDto: UpdateGradeDto): Promise<Grade> {
+    const existingGrade = await this.findOne(id);
+    Object.assign(existingGrade, updateGradeDto);
+    return await this.gradeRepository.save(existingGrade);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} grade`;
+  async remove(id: number): Promise<void> {
+    const existingGrade = await this.findOne(id);
+    await this.gradeRepository.remove(existingGrade);
   }
 }
