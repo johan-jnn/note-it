@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { DataSourceOptions } from 'typeorm';
 
-export default {
+export const options = {
   type: 'better-sqlite3',
   database: ':memory:',
 

@@ -1,7 +1,7 @@
 import { join } from 'path';
-import { DataSourceOptions } from 'typeorm/browser';
+import { DataSourceOptions } from 'typeorm';
 
-export default Object.assign(
+export const options = Object.assign(
   {
     // For typing purpose only
     type: 'mariadb',
