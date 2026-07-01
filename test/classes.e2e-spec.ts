@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { AppModule } from '../src/app.module';
 import { Class } from '../src/classes/entities/class.entity';
 
 const mockClassesRepository = {
