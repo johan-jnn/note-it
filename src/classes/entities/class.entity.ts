@@ -11,7 +11,7 @@ export class Class {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column('string')
+  @Column('varchar')
   name: string;
 
   @CreateDateColumn()

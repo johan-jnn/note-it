@@ -20,7 +20,7 @@ export class Grade {
     precision: 2,
   })
   value: number;
-  @Column('string', {
+  @Column('varchar', {
     nullable: true,
   })
   comment?: string;

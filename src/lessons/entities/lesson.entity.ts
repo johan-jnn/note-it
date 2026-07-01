@@ -16,7 +16,7 @@ export class Lesson {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column('string', {
+  @Column('varchar', {
     nullable: true,
   })
   name?: string;

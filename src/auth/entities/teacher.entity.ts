@@ -15,9 +15,9 @@ export class Teacher {
   @PrimaryColumn('uuid')
   id: string;
 
-  @Column('string')
+  @Column('varchar')
   first_name: string;
-  @Column('string')
+  @Column('varchar')
   last_name: string;
 
   @OneToOne(() => Account)

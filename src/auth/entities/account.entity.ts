@@ -12,15 +12,14 @@ export class Account {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('string', {
+  @Column('varchar', {
     unique: true,
   })
   email: string;
-  @Column('string')
+  @Column('varchar')
   password: string;
 
   @Column({
-    type: 'enum',
     enum: () => AccountsType,
   })
   type: AccountsType;

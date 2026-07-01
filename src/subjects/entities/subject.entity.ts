@@ -14,10 +14,10 @@ export class Subject {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column('string')
+  @Column('varchar')
   name: string;
 
-  @Column('string', {
+  @Column('varchar', {
     nullable: true,
   })
   description?: string;
