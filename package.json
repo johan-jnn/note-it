@@ -19,10 +19,10 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "orm": "npx typeorm-ts-node-commonjs",
-    "orm:linked": "npx typeorm-ts-node-commonjs -d database/sources/_resolver.ts",
-    "orm:app": "NODE_ENV=production npm run orm:linked",
-    "orm:tests": "NODE_ENV=tests npm run orm:linked",
-    "orm:local": "npm run orm:linked"
+    "linked-orm": "npx typeorm-ts-node-commonjs -d database/sources/_resolver.ts",
+    "orm:app": "NODE_ENV=production npm run linked-orm",
+    "orm:tests": "NODE_ENV=tests npm run linked-orm",
+    "orm:local": "npm run linked-orm"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
