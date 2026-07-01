@@ -71,6 +71,7 @@ describe('AssignmentsController', () => {
       const createDto: CreateAssignmentDto = {
         title: 'New Assignment',
         scale: 20,
+        lessonId: 1,
       };
 
       mockAssignmentService.create.mockResolvedValue({

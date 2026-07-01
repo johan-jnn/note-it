@@ -60,7 +60,12 @@ describe('LessonsController', () => {
 
   describe('create', () => {
     it('should create a new lesson', async () => {
-      const createDto: CreateLessonDto = { name: 'New Lesson' };
+      const createDto: CreateLessonDto = {
+        name: 'New Lesson',
+        classId: 1,
+        teacherId: 'teacher-uuid',
+        subjectId: 1,
+      };
 
       mockLessonService.create.mockResolvedValue({
         ...mockLesson,

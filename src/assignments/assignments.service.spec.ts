@@ -3,8 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { AssignmentsService } from './assignments.service';
 import { Assignment } from './entities/assignment.entity';
+import { Lesson } from '../lessons/entities/lesson.entity';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
+
+const mockLesson = { id: 1, name: 'Test Lesson' } as unknown as Lesson;
 
 const mockAssignment = {
   id: 1,
@@ -13,22 +16,14 @@ const mockAssignment = {
   end_date: null,
   scale: 20,
   coefficient: 1,
+  lesson: mockLesson,
   created_at: new Date(),
   updated_at: new Date(),
 } as unknown as Assignment;
 
 const mockAssignments = [
   mockAssignment,
-  {
-    id: 2,
-    title: 'Test Assignment 2',
-    begin_date: null,
-    end_date: null,
-    scale: 20,
-    coefficient: 1,
-    created_at: new Date(),
-    updated_at: new Date(),
-  } as unknown as Assignment,
+  { ...mockAssignment, id: 2, title: 'Test Assignment 2' } as unknown as Assignment,
 ];
 
 describe('AssignmentsService', () => {
@@ -41,6 +36,7 @@ describe('AssignmentsService', () => {
     findOne: jest.fn(),
     remove: jest.fn(),
   };
+  const mockLessonRepository = { findOne: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -50,10 +46,16 @@ describe('AssignmentsService', () => {
           provide: getRepositoryToken(Assignment),
           useValue: mockRepository,
         },
+        {
+          provide: getRepositoryToken(Lesson),
+          useValue: mockLessonRepository,
+        },
       ],
     }).compile();
 
     service = module.get<AssignmentsService>(AssignmentsService);
+
+    mockLessonRepository.findOne.mockResolvedValue(mockLesson);
   });
 
   afterEach(() => {
@@ -65,15 +67,18 @@ describe('AssignmentsService', () => {
   });
 
   describe('create', () => {
+    const createDto: CreateAssignmentDto = {
+      title: 'New Assignment',
+      scale: 20,
+      lessonId: 1,
+    };
+
     it('should create a new assignment', async () => {
-      const createDto: CreateAssignmentDto = {
-        title: 'New Assignment',
-        scale: 20,
-      };
       const expectedResult = {
         id: 1,
         title: 'New Assignment',
         scale: 20,
+        lesson: mockLesson,
         created_at: new Date(),
         updated_at: new Date(),
       } as unknown as Assignment;
@@ -83,21 +88,33 @@ describe('AssignmentsService', () => {
 
       const result = await service.create(createDto);
 
-      expect(mockRepository.create).toHaveBeenCalledWith(createDto);
+      expect(mockLessonRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        title: 'New Assignment',
+        scale: 20,
+        lesson: mockLesson,
+      });
       expect(mockRepository.save).toHaveBeenCalledWith(expectedResult);
       expect(result).toEqual(expectedResult);
     });
 
-    it('should throw an error if creation fails', async () => {
-      const createDto: CreateAssignmentDto = {
-        title: 'New Assignment',
-        scale: 20,
-      };
+    it('should throw NotFoundException if the lesson does not exist', async () => {
+      mockLessonRepository.findOne.mockResolvedValue(null);
 
+      await expect(service.create(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw an error if creation fails', async () => {
       mockRepository.create.mockReturnValue(mockAssignment);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.create(createDto)).rejects.toThrow('Database error');
+      await expect(service.create(createDto)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
@@ -107,7 +124,9 @@ describe('AssignmentsService', () => {
 
       const result = await service.findAll();
 
-      expect(mockRepository.find).toHaveBeenCalled();
+      expect(mockRepository.find).toHaveBeenCalledWith({
+        relations: { lesson: true },
+      });
       expect(result).toEqual(mockAssignments);
     });
 
@@ -126,7 +145,10 @@ describe('AssignmentsService', () => {
 
       const result = await service.findOne(1);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { lesson: true },
+      });
       expect(result).toEqual(mockAssignment);
     });
 
@@ -136,6 +158,7 @@ describe('AssignmentsService', () => {
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 999 },
+        relations: { lesson: true },
       });
     });
   });
@@ -154,9 +177,25 @@ describe('AssignmentsService', () => {
 
       const result = await service.update(1, updateDto);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
       expect(mockRepository.save).toHaveBeenCalledWith(expectedResult);
       expect(result).toEqual(expectedResult);
+    });
+
+    it('should update the lesson when lessonId is provided', async () => {
+      const anotherLesson = { id: 2, name: 'Another Lesson' } as unknown as Lesson;
+      mockLessonRepository.findOne.mockResolvedValue(anotherLesson);
+
+      mockRepository.findOne.mockResolvedValue({ ...mockAssignment });
+      mockRepository.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
+
+      const result = await service.update(1, { lessonId: 2 });
+
+      expect(mockLessonRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 2 },
+      });
+      expect(result.lesson).toEqual(anotherLesson);
     });
 
     it('should throw NotFoundException if assignment to update not found', async () => {
@@ -177,7 +216,10 @@ describe('AssignmentsService', () => {
 
       await service.remove(1);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { lesson: true },
+      });
       expect(mockRepository.remove).toHaveBeenCalledWith(mockAssignment);
     });
 

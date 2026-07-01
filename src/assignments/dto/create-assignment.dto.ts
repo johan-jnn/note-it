@@ -1,5 +1,6 @@
 import {
   IsDateString,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -26,4 +27,8 @@ export class CreateAssignmentDto {
   @IsNumber()
   @IsOptional()
   coefficient?: number;
+
+  @IsInt()
+  @IsNotEmpty()
+  lessonId: number;
 }

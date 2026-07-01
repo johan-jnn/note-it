@@ -3,26 +3,34 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { GradesService } from './grades.service';
 import { Grade } from './entities/grade.entity';
+import { Assignment } from '../assignments/entities/assignment.entity';
+import { Student } from '../accounts/entities/student.entity';
 import { CreateGradeDto } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
+
+const mockAssignment = {
+  id: 1,
+  title: 'Test Assignment',
+} as unknown as Assignment;
+const mockStudent = {
+  id: 'student-uuid',
+  first_name: 'John',
+  last_name: 'Doe',
+} as unknown as Student;
 
 const mockGrade = {
   id: 1,
   value: 15,
   comment: 'Good work',
+  assignment: mockAssignment,
+  student: mockStudent,
   created_at: new Date(),
   updated_at: new Date(),
 } as unknown as Grade;
 
 const mockGrades = [
   mockGrade,
-  {
-    id: 2,
-    value: 12,
-    comment: 'Average',
-    created_at: new Date(),
-    updated_at: new Date(),
-  } as unknown as Grade,
+  { ...mockGrade, id: 2, value: 12, comment: 'Average' } as unknown as Grade,
 ];
 
 describe('GradesService', () => {
@@ -35,6 +43,8 @@ describe('GradesService', () => {
     findOne: jest.fn(),
     remove: jest.fn(),
   };
+  const mockAssignmentRepository = { findOne: jest.fn() };
+  const mockStudentRepository = { findOne: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -44,10 +54,21 @@ describe('GradesService', () => {
           provide: getRepositoryToken(Grade),
           useValue: mockRepository,
         },
+        {
+          provide: getRepositoryToken(Assignment),
+          useValue: mockAssignmentRepository,
+        },
+        {
+          provide: getRepositoryToken(Student),
+          useValue: mockStudentRepository,
+        },
       ],
     }).compile();
 
     service = module.get<GradesService>(GradesService);
+
+    mockAssignmentRepository.findOne.mockResolvedValue(mockAssignment);
+    mockStudentRepository.findOne.mockResolvedValue(mockStudent);
   });
 
   afterEach(() => {
@@ -59,11 +80,18 @@ describe('GradesService', () => {
   });
 
   describe('create', () => {
+    const createDto: CreateGradeDto = {
+      value: 15,
+      assignmentId: 1,
+      studentId: 'student-uuid',
+    };
+
     it('should create a new grade', async () => {
-      const createDto: CreateGradeDto = { value: 15 };
       const expectedResult = {
         id: 1,
         value: 15,
+        assignment: mockAssignment,
+        student: mockStudent,
         created_at: new Date(),
         updated_at: new Date(),
       } as unknown as Grade;
@@ -73,18 +101,44 @@ describe('GradesService', () => {
 
       const result = await service.create(createDto);
 
-      expect(mockRepository.create).toHaveBeenCalledWith(createDto);
+      expect(mockAssignmentRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(mockStudentRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'student-uuid' },
+      });
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        value: 15,
+        assignment: mockAssignment,
+        student: mockStudent,
+      });
       expect(mockRepository.save).toHaveBeenCalledWith(expectedResult);
       expect(result).toEqual(expectedResult);
     });
 
-    it('should throw an error if creation fails', async () => {
-      const createDto: CreateGradeDto = { value: 15 };
+    it('should throw NotFoundException if the assignment does not exist', async () => {
+      mockAssignmentRepository.findOne.mockResolvedValue(null);
 
+      await expect(service.create(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw NotFoundException if the student does not exist', async () => {
+      mockStudentRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.create(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw an error if creation fails', async () => {
       mockRepository.create.mockReturnValue(mockGrade);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.create(createDto)).rejects.toThrow('Database error');
+      await expect(service.create(createDto)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
@@ -94,7 +148,9 @@ describe('GradesService', () => {
 
       const result = await service.findAll();
 
-      expect(mockRepository.find).toHaveBeenCalled();
+      expect(mockRepository.find).toHaveBeenCalledWith({
+        relations: { assignment: true, student: true },
+      });
       expect(result).toEqual(mockGrades);
     });
 
@@ -113,7 +169,10 @@ describe('GradesService', () => {
 
       const result = await service.findOne(1);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { assignment: true, student: true },
+      });
       expect(result).toEqual(mockGrade);
     });
 
@@ -123,6 +182,7 @@ describe('GradesService', () => {
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 999 },
+        relations: { assignment: true, student: true },
       });
     });
   });
@@ -141,9 +201,28 @@ describe('GradesService', () => {
 
       const result = await service.update(1, updateDto);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
       expect(mockRepository.save).toHaveBeenCalledWith(expectedResult);
       expect(result).toEqual(expectedResult);
+    });
+
+    it('should update the assignment/student when ids are provided', async () => {
+      const anotherAssignment = {
+        id: 2,
+        title: 'Another Assignment',
+      } as unknown as Assignment;
+      mockAssignmentRepository.findOne.mockResolvedValue(anotherAssignment);
+
+      mockRepository.findOne.mockResolvedValue({ ...mockGrade });
+      mockRepository.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
+
+      const result = await service.update(1, { assignmentId: 2 });
+
+      expect(mockAssignmentRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 2 },
+      });
+      expect(result.assignment).toEqual(anotherAssignment);
     });
 
     it('should throw NotFoundException if grade to update not found', async () => {
@@ -164,7 +243,10 @@ describe('GradesService', () => {
 
       await service.remove(1);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { assignment: true, student: true },
+      });
       expect(mockRepository.remove).toHaveBeenCalledWith(mockGrade);
     });
 

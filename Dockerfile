@@ -1,32 +1,28 @@
 FROM node:20-alpine AS frontend-builder
 
-WORKDIR /app
+WORKDIR /tmp/frontend
 
 # Copy frontend package files
-COPY frontend/package*.json ./frontend/
+COPY frontend/package*.json .
 
 # Install frontend dependencies
-RUN cd frontend && \
-    npm ci && \
-    npm cache clean --force
+RUN npm ci
 
 # Copy frontend source files
-COPY frontend/ ./frontend/
+COPY frontend/ .
 
 # Build frontend
-RUN cd frontend && \
-    npm run build
+RUN npm run build -- --outDir dist
 
 FROM node:20-alpine AS backend-builder
 
-WORKDIR /app
+WORKDIR /tmp/backend
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production && \
-    npm cache clean --force
+RUN npm ci
 
 # Copy source files
 COPY src/ ./src/
@@ -34,36 +30,29 @@ COPY database/ ./database/
 COPY tsconfig.build.json ./
 
 # Build the backend
-RUN npm run build
+RUN npm run build -- --outDir dist
 
 FROM node:20-alpine AS production
 
-WORKDIR /app
-
-# Install runtime dependencies
-RUN apk add --no-cache --virtual .gyp python3 make g++
+WORKDIR /noteit
 
 # Copy from frontend builder
-COPY --from=frontend-builder /app/frontend/dist ./dist/frontend
+COPY --from=frontend-builder /tmp/frontend/dist ./frontend
 
 # Copy from backend builder
-COPY --from=backend-builder /app/node_modules ./node_modules
-COPY --from=backend-builder /app/package*.json ./
-COPY --from=backend-builder /app/dist ./dist/backend
-COPY --from=backend-builder /app/database ./database
+COPY --from=backend-builder /tmp/backend/dist/* ./
+COPY --from=backend-builder /tmp/backend/package*.json ./
 
-# Remove build dependencies
-RUN apk del .gyp python3 make g++
+RUN npm ci --omit dev
 
 # Create non-root user
-RUN addgroup -S appgroup && \
-    adduser -S appuser -G appgroup
+RUN adduser -S noteit
 
 # Change ownership
-RUN chown -R appuser:appgroup /app
+RUN chown -R noteit /noteit
 
 # Switch to non-root user
-USER appuser
+USER noteit
 
 # Environment variables
 ENV NODE_ENV=production
@@ -77,4 +66,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 # Start the application
-CMD ["node", "dist/backend/main"]
+CMD ["node", "dist/src/main"]

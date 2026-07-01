@@ -16,8 +16,10 @@ export class Account {
     unique: true,
   })
   email: string;
-  @Column('varchar')
-  password: string;
+
+  // Local-only -> no authentification system
+  // @Column('varchar')
+  // password: string;
 
   @Column({
     enum: () => AccountsType,

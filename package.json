@@ -22,7 +22,7 @@
     "linked-orm": "npx typeorm-ts-node-commonjs -d database/sources/_resolver.ts",
     "orm:app": "NODE_ENV=production npm run linked-orm",
     "orm:tests": "NODE_ENV=tests npm run linked-orm",
-    "orm:local": "npm run linked-orm"
+    "orm:local": "NODE_ENV=local npm run linked-orm"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

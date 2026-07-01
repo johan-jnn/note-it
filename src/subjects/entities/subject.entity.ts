@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Teacher } from '../../auth/entities/teacher.entity';
+import { Teacher } from '../../accounts/entities/teacher.entity';
 
 @Entity('subjects')
 export class Subject {

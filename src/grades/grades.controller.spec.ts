@@ -62,7 +62,11 @@ describe('GradesController', () => {
 
   describe('create', () => {
     it('should create a new grade', async () => {
-      const createDto: CreateGradeDto = { value: 15 };
+      const createDto: CreateGradeDto = {
+        value: 15,
+        assignmentId: 1,
+        studentId: 'student-uuid',
+      };
 
       mockGradeService.create.mockResolvedValue({
         ...mockGrade,

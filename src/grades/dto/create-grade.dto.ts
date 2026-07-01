@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateGradeDto {
   @IsNumber()
@@ -8,4 +15,12 @@ export class CreateGradeDto {
   @IsString()
   @IsOptional()
   comment?: string;
+
+  @IsInt()
+  @IsNotEmpty()
+  assignmentId: number;
+
+  @IsUUID()
+  @IsNotEmpty()
+  studentId: string;
 }

@@ -2,9 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SubjectsController } from './subjects.controller';
 import { SubjectsService } from './subjects.service';
 import { Subject } from './entities/subject.entity';
+import { Teacher } from '../accounts/entities/teacher.entity';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { NotFoundException } from '@nestjs/common';
+
+const mockTeacher = {
+  id: 'teacher-uuid',
+  first_name: 'Jane',
+  last_name: 'Doe',
+} as Teacher;
 
 // Mock Subject entity for testing
 const mockSubject: Subject = {
@@ -13,7 +20,7 @@ const mockSubject: Subject = {
   description: 'Test Description',
   created_at: new Date(),
   updated_at: new Date(),
-  owner: null,
+  owner: mockTeacher,
 };
 
 const mockSubjects: Subject[] = [
@@ -24,7 +31,7 @@ const mockSubjects: Subject[] = [
     description: 'Another Description',
     created_at: new Date(),
     updated_at: new Date(),
-    owner: null,
+    owner: mockTeacher,
   },
 ];
 
@@ -68,6 +75,7 @@ describe('SubjectsController', () => {
       const createDto: CreateSubjectDto = {
         name: 'New Subject',
         description: 'New Description',
+        ownerId: 'teacher-uuid',
       };
 
       mockSubjectsService.create.mockResolvedValue({

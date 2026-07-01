@@ -3,8 +3,15 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { SubjectsService } from './subjects.service';
 import { Subject } from './entities/subject.entity';
+import { Teacher } from '../accounts/entities/teacher.entity';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
+
+const mockTeacher = {
+  id: 'teacher-uuid',
+  first_name: 'Jane',
+  last_name: 'Doe',
+} as Teacher;
 
 // Mock Subject entity for testing
 const mockSubject: Subject = {
@@ -13,7 +20,7 @@ const mockSubject: Subject = {
   description: 'Test Description',
   created_at: new Date(),
   updated_at: new Date(),
-  owner: null,
+  owner: mockTeacher,
 };
 
 const mockSubjects: Subject[] = [
@@ -24,7 +31,7 @@ const mockSubjects: Subject[] = [
     description: 'Another Description',
     created_at: new Date(),
     updated_at: new Date(),
-    owner: null,
+    owner: mockTeacher,
   },
 ];
 
@@ -38,6 +45,7 @@ describe('SubjectsService', () => {
     findOne: jest.fn(),
     remove: jest.fn(),
   };
+  const mockTeacherRepository = { findOne: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -47,10 +55,16 @@ describe('SubjectsService', () => {
           provide: getRepositoryToken(Subject),
           useValue: mockRepository,
         },
+        {
+          provide: getRepositoryToken(Teacher),
+          useValue: mockTeacherRepository,
+        },
       ],
     }).compile();
 
     service = module.get<SubjectsService>(SubjectsService);
+
+    mockTeacherRepository.findOne.mockResolvedValue(mockTeacher);
   });
 
   afterEach(() => {
@@ -62,18 +76,20 @@ describe('SubjectsService', () => {
   });
 
   describe('create', () => {
+    const createDto: CreateSubjectDto = {
+      name: 'New Subject',
+      description: 'New Description',
+      ownerId: 'teacher-uuid',
+    };
+
     it('should create a new subject', async () => {
-      const createDto: CreateSubjectDto = {
-        name: 'New Subject',
-        description: 'New Description',
-      };
       const expectedResult: Subject = {
         id: 1,
         name: 'New Subject',
         description: 'New Description',
         created_at: new Date(),
         updated_at: new Date(),
-        owner: null,
+        owner: mockTeacher,
       };
 
       mockRepository.create.mockReturnValue(expectedResult);
@@ -81,18 +97,33 @@ describe('SubjectsService', () => {
 
       const result = await service.create(createDto);
 
-      expect(mockRepository.create).toHaveBeenCalledWith(createDto);
+      expect(mockTeacherRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'teacher-uuid' },
+      });
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        name: 'New Subject',
+        description: 'New Description',
+        owner: mockTeacher,
+      });
       expect(mockRepository.save).toHaveBeenCalledWith(expectedResult);
       expect(result).toEqual(expectedResult);
     });
 
-    it('should throw an error if creation fails', async () => {
-      const createDto: CreateSubjectDto = { name: 'New Subject' };
+    it('should throw NotFoundException if the owner does not exist', async () => {
+      mockTeacherRepository.findOne.mockResolvedValue(null);
 
+      await expect(service.create(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw an error if creation fails', async () => {
       mockRepository.create.mockReturnValue(mockSubject);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.create(createDto)).rejects.toThrow('Database error');
+      await expect(service.create(createDto)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
@@ -102,7 +133,9 @@ describe('SubjectsService', () => {
 
       const result = await service.findAll();
 
-      expect(mockRepository.find).toHaveBeenCalled();
+      expect(mockRepository.find).toHaveBeenCalledWith({
+        relations: { owner: true },
+      });
       expect(result).toEqual(mockSubjects);
     });
 
@@ -121,7 +154,10 @@ describe('SubjectsService', () => {
 
       const result = await service.findOne(1);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { owner: true },
+      });
       expect(result).toEqual(mockSubject);
     });
 
@@ -129,9 +165,6 @@ describe('SubjectsService', () => {
       mockRepository.findOne.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 999 },
-      });
     });
   });
 
@@ -148,9 +181,29 @@ describe('SubjectsService', () => {
 
       const result = await service.update(1, updateDto);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
       expect(mockRepository.save).toHaveBeenCalledWith(expectedResult);
       expect(result).toEqual(expectedResult);
+    });
+
+    it('should update the owner when ownerId is provided', async () => {
+      const anotherTeacher = {
+        id: 'another-uuid',
+        first_name: 'John',
+        last_name: 'Smith',
+      } as Teacher;
+      mockTeacherRepository.findOne.mockResolvedValue(anotherTeacher);
+
+      mockRepository.findOne.mockResolvedValue({ ...mockSubject });
+      mockRepository.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
+
+      const result = await service.update(1, { ownerId: 'another-uuid' });
+
+      expect(mockTeacherRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'another-uuid' },
+      });
+      expect(result.owner).toEqual(anotherTeacher);
     });
 
     it('should throw NotFoundException if subject to update not found', async () => {
@@ -171,7 +224,10 @@ describe('SubjectsService', () => {
 
       await service.remove(1);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { owner: true },
+      });
       expect(mockRepository.remove).toHaveBeenCalledWith(mockSubject);
     });
 

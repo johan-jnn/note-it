@@ -57,7 +57,7 @@ describe('ClassesController (e2e)', () => {
       mockClassesRepository.find.mockResolvedValue(mockClasses);
 
       return request(app.getHttpServer())
-        .get('/classes')
+        .get('/api/classes')
         .expect(200)
         .expect(mockClasses);
     });
@@ -77,14 +77,14 @@ describe('ClassesController (e2e)', () => {
       mockClassesRepository.save.mockResolvedValue(createdClass);
 
       return request(app.getHttpServer())
-        .post('/classes')
+        .post('/api/classes')
         .send(newClass)
         .expect(201)
         .expect(createdClass);
     });
 
     it('should return 400 for invalid data', async () => {
-      return request(app.getHttpServer()).post('/classes').send({}).expect(400);
+      return request(app.getHttpServer()).post('/api/classes').send({}).expect(400);
     });
   });
 
@@ -100,7 +100,7 @@ describe('ClassesController (e2e)', () => {
       mockClassesRepository.findOne.mockResolvedValue(mockClass);
 
       return request(app.getHttpServer())
-        .get('/classes/1')
+        .get('/api/classes/1')
         .expect(200)
         .expect(mockClass);
     });
@@ -108,7 +108,7 @@ describe('ClassesController (e2e)', () => {
     it('should return 404 if class not found', async () => {
       mockClassesRepository.findOne.mockResolvedValue(null);
 
-      return request(app.getHttpServer()).get('/classes/999').expect(404);
+      return request(app.getHttpServer()).get('/api/classes/999').expect(404);
     });
   });
 
@@ -131,7 +131,7 @@ describe('ClassesController (e2e)', () => {
       mockClassesRepository.save.mockResolvedValue(updatedClass);
 
       return request(app.getHttpServer())
-        .patch('/classes/1')
+        .patch('/api/classes/1')
         .send({ name: 'Updated Name' })
         .expect(200)
         .expect(updatedClass);
@@ -141,7 +141,7 @@ describe('ClassesController (e2e)', () => {
       mockClassesRepository.findOne.mockResolvedValue(null);
 
       return request(app.getHttpServer())
-        .patch('/classes/999')
+        .patch('/api/classes/999')
         .send({ name: 'Updated Name' })
         .expect(404);
     });
@@ -160,7 +160,7 @@ describe('ClassesController (e2e)', () => {
       mockClassesRepository.remove.mockResolvedValue(existingClass);
 
       return request(app.getHttpServer())
-        .delete('/classes/1')
+        .delete('/api/classes/1')
         .expect(200)
         .expect({ message: 'Class with ID 1 has been successfully deleted' });
     });
@@ -168,7 +168,7 @@ describe('ClassesController (e2e)', () => {
     it('should return 404 if class to delete not found', async () => {
       mockClassesRepository.findOne.mockResolvedValue(null);
 
-      return request(app.getHttpServer()).delete('/classes/999').expect(404);
+      return request(app.getHttpServer()).delete('/api/classes/999').expect(404);
     });
   });
 });

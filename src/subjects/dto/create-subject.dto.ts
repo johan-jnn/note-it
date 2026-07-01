@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateSubjectDto {
   @IsString()
@@ -8,4 +8,11 @@ export class CreateSubjectDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  /**
+   * ID of the teacher who owns (and can delete) the subject.
+   */
+  @IsUUID()
+  @IsNotEmpty()
+  ownerId: string;
 }
