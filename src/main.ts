@@ -1,11 +1,11 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+// Load potential .env files
 import { config } from 'dotenv';
 import { expand } from 'dotenv-expand';
-import { AppModule } from './app.module';
-
-// Load potential .env files
 expand(config());
+
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

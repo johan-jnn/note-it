@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import appDatasource from '../database/sources/app.datasource';
-import localDatasource from '../database/sources/local.datasource';
+import { runtimeDatasourceOptions } from '../database/sources/_resolver';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AssignmentsModule } from './assignments/assignments.module';
@@ -14,10 +13,7 @@ import { SubjectsModule } from './subjects/subjects.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot(
-      (process.env.NODE_ENV === 'production' ? appDatasource : localDatasource)
-        .options,
-    ),
+    TypeOrmModule.forRoot(runtimeDatasourceOptions(), process.env.NODE_ENV),
     AuthModule,
     ClassesModule,
     SubjectsModule,

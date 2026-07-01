@@ -1,10 +1,10 @@
 import { join } from 'path';
-import { DataSource } from 'typeorm';
+import { DataSourceOptions } from 'typeorm';
 
-export default new DataSource({
+export default {
   type: 'better-sqlite3',
   database: join(__dirname, '../app.db'),
 
   entities: [join(__dirname, '../../src/**/*.entity.ts')],
   migrations: [join(__dirname, '../migrations/*.ts')],
-});
+} satisfies DataSourceOptions;

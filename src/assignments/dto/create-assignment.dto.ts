@@ -1,9 +1,9 @@
 import {
-  IsString,
+  IsDateString,
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsDateString,
+  IsString,
 } from 'class-validator';
 
 export class CreateAssignmentDto {
