@@ -5,6 +5,7 @@
     { href: '/lessons', label: 'Cours', description: 'Gérer les cours' },
     { href: '/assignments', label: 'Devoirs', description: 'Gérer les devoirs' },
     { href: '/grades', label: 'Notes', description: 'Gérer les notes' },
+    { href: '/accounts', label: 'Comptes', description: 'Créer des comptes élève ou enseignant' },
   ];
 </script>
 

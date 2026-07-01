@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import { ApiError, subjectsApi, type Subject } from '$lib/api';
+  import { ApiError, accountsApi, subjectsApi, type AccountWithProfile, type Subject } from '$lib/api';
 
   const id = Number(page.params.id);
 
@@ -14,13 +14,15 @@
   let saving = $state(false);
   let error = $state('');
 
+  let teachers = $state<AccountWithProfile[]>([]);
+
   onMount(load);
 
   async function load() {
     loading = true;
     error = '';
     try {
-      item = await subjectsApi.get(id);
+      [item, teachers] = await Promise.all([subjectsApi.get(id), accountsApi.listTeachers()]);
       name = item.name;
       description = item.description ?? '';
       ownerId = item.owner.id;
@@ -82,8 +84,12 @@
     </div>
 
     <div class="field">
-      <label for="ownerId">Propriétaire (UUID enseignant)</label>
-      <input id="ownerId" type="text" bind:value={ownerId} required />
+      <label for="ownerId">Propriétaire</label>
+      <select id="ownerId" bind:value={ownerId} required>
+        {#each teachers as t (t.id)}
+          <option value={t.id}>{t.profile.first_name} {t.profile.last_name}</option>
+        {/each}
+      </select>
     </div>
 
     <div class="form-actions">

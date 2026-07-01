@@ -1,3 +1,4 @@
+import { Expose } from 'class-transformer';
 import {
   Column,
   CreateDateColumn,
@@ -25,7 +26,8 @@ export class Lesson {
    * This returns the name of the lesson or, if not defined,
    * the name of the lesson's subject's name
    */
-  get real_name() {
+  @Expose()
+  get real_name(): string {
     return this.name ?? this.subject.name;
   }
 

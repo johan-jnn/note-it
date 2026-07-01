@@ -2,7 +2,15 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import { ApiError, assignmentsApi, gradesApi, type Assignment, type Grade } from '$lib/api';
+  import {
+    ApiError,
+    accountsApi,
+    assignmentsApi,
+    gradesApi,
+    type AccountWithProfile,
+    type Assignment,
+    type Grade,
+  } from '$lib/api';
 
   const id = Number(page.params.id);
 
@@ -16,6 +24,7 @@
   let error = $state('');
 
   let assignments = $state<Assignment[]>([]);
+  let students = $state<AccountWithProfile[]>([]);
 
   onMount(load);
 
@@ -23,7 +32,11 @@
     loading = true;
     error = '';
     try {
-      [item, assignments] = await Promise.all([gradesApi.get(id), assignmentsApi.list()]);
+      [item, assignments, students] = await Promise.all([
+        gradesApi.get(id),
+        assignmentsApi.list(),
+        accountsApi.listStudents(),
+      ]);
       value = item.value;
       comment = item.comment ?? '';
       assignmentId = item.assignment.id;
@@ -96,8 +109,12 @@
     </div>
 
     <div class="field">
-      <label for="studentId">Élève (UUID)</label>
-      <input id="studentId" type="text" bind:value={studentId} required />
+      <label for="studentId">Élève</label>
+      <select id="studentId" bind:value={studentId} required>
+        {#each students as s (s.id)}
+          <option value={s.id}>{s.profile.first_name} {s.profile.last_name}</option>
+        {/each}
+      </select>
     </div>
 
     <div class="form-actions">

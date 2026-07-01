@@ -4,9 +4,11 @@
   import { page } from '$app/state';
   import {
     ApiError,
+    accountsApi,
     classesApi,
     lessonsApi,
     subjectsApi,
+    type AccountWithProfile,
     type Class,
     type Lesson,
     type Subject,
@@ -25,6 +27,7 @@
 
   let classes = $state<Class[]>([]);
   let subjects = $state<Subject[]>([]);
+  let teachers = $state<AccountWithProfile[]>([]);
 
   onMount(load);
 
@@ -32,10 +35,11 @@
     loading = true;
     error = '';
     try {
-      [item, classes, subjects] = await Promise.all([
+      [item, classes, subjects, teachers] = await Promise.all([
         lessonsApi.get(id),
         classesApi.list(),
         subjectsApi.list(),
+        accountsApi.listTeachers(),
       ]);
       name = item.name ?? '';
       classId = item.class.id;
@@ -113,8 +117,12 @@
     </div>
 
     <div class="field">
-      <label for="teacherId">Enseignant (UUID)</label>
-      <input id="teacherId" type="text" bind:value={teacherId} required />
+      <label for="teacherId">Enseignant</label>
+      <select id="teacherId" bind:value={teacherId} required>
+        {#each teachers as t (t.id)}
+          <option value={t.id}>{t.profile.first_name} {t.profile.last_name}</option>
+        {/each}
+      </select>
     </div>
 
     <div class="form-actions">

@@ -1,7 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { ApiError, classesApi, lessonsApi, subjectsApi, type Class, type Subject } from '$lib/api';
+  import {
+    ApiError,
+    accountsApi,
+    classesApi,
+    lessonsApi,
+    subjectsApi,
+    type AccountWithProfile,
+    type Class,
+    type Subject,
+  } from '$lib/api';
 
   let name = $state('');
   let classId = $state<number | null>(null);
@@ -12,12 +21,17 @@
 
   let classes = $state<Class[]>([]);
   let subjects = $state<Subject[]>([]);
+  let teachers = $state<AccountWithProfile[]>([]);
 
   onMount(async () => {
     try {
-      [classes, subjects] = await Promise.all([classesApi.list(), subjectsApi.list()]);
+      [classes, subjects, teachers] = await Promise.all([
+        classesApi.list(),
+        subjectsApi.list(),
+        accountsApi.listTeachers(),
+      ]);
     } catch (e) {
-      error = e instanceof ApiError ? e.message : 'Échec du chargement des classes/matières';
+      error = e instanceof ApiError ? e.message : 'Échec du chargement des classes/matières/enseignants';
     }
   });
 
@@ -75,8 +89,13 @@
   </div>
 
   <div class="field">
-    <label for="teacherId">Enseignant (UUID)</label>
-    <input id="teacherId" type="text" bind:value={teacherId} required />
+    <label for="teacherId">Enseignant</label>
+    <select id="teacherId" bind:value={teacherId} required>
+      <option value="" disabled selected>Sélectionner un enseignant</option>
+      {#each teachers as t (t.id)}
+        <option value={t.id}>{t.profile.first_name} {t.profile.last_name}</option>
+      {/each}
+    </select>
   </div>
 
   <div class="form-actions">

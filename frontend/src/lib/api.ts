@@ -9,7 +9,10 @@ export class ApiError extends Error {
   }
 }
 
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
   const res = await fetch(`/api${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) },
@@ -50,10 +53,15 @@ function resourceClient<TEntity, TCreate, TUpdate = Partial<TCreate>>(
   return {
     list: () => apiFetch<TEntity[]>(path),
     get: (id) => apiFetch<TEntity>(`${path}/${id}`),
-    create: (data) => apiFetch<TEntity>(path, { method: 'POST', body: JSON.stringify(data) }),
+    create: (data) =>
+      apiFetch<TEntity>(path, { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) =>
-      apiFetch<TEntity>(`${path}/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    remove: (id) => apiFetch<{ message: string }>(`${path}/${id}`, { method: 'DELETE' }),
+      apiFetch<TEntity>(`${path}/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    remove: (id) =>
+      apiFetch<{ message: string }>(`${path}/${id}`, { method: 'DELETE' }),
   };
 }
 
@@ -86,7 +94,9 @@ export interface CreateClassDto {
 
 export type UpdateClassDto = Partial<CreateClassDto>;
 
-export const classesApi = resourceClient<Class, CreateClassDto, UpdateClassDto>('/classes');
+export const classesApi = resourceClient<Class, CreateClassDto, UpdateClassDto>(
+  '/classes',
+);
 
 // --- Subjects ---
 
@@ -108,9 +118,11 @@ export interface CreateSubjectDto {
 
 export type UpdateSubjectDto = Partial<CreateSubjectDto>;
 
-export const subjectsApi = resourceClient<Subject, CreateSubjectDto, UpdateSubjectDto>(
-  '/subjects',
-);
+export const subjectsApi = resourceClient<
+  Subject,
+  CreateSubjectDto,
+  UpdateSubjectDto
+>('/subjects');
 
 // --- Lessons ---
 
@@ -134,7 +146,11 @@ export interface CreateLessonDto {
 
 export type UpdateLessonDto = Partial<CreateLessonDto>;
 
-export const lessonsApi = resourceClient<Lesson, CreateLessonDto, UpdateLessonDto>('/lessons');
+export const lessonsApi = resourceClient<
+  Lesson,
+  CreateLessonDto,
+  UpdateLessonDto
+>('/lessons');
 
 // --- Assignments ---
 
@@ -161,9 +177,11 @@ export interface CreateAssignmentDto {
 
 export type UpdateAssignmentDto = Partial<CreateAssignmentDto>;
 
-export const assignmentsApi = resourceClient<Assignment, CreateAssignmentDto, UpdateAssignmentDto>(
-  '/assignments',
-);
+export const assignmentsApi = resourceClient<
+  Assignment,
+  CreateAssignmentDto,
+  UpdateAssignmentDto
+>('/assignments');
 
 // --- Grades ---
 
@@ -186,4 +204,72 @@ export interface CreateGradeDto {
 
 export type UpdateGradeDto = Partial<CreateGradeDto>;
 
-export const gradesApi = resourceClient<Grade, CreateGradeDto, UpdateGradeDto>('/grades');
+export const gradesApi = resourceClient<Grade, CreateGradeDto, UpdateGradeDto>(
+  '/grades',
+);
+
+// --- Accounts ---
+// Note: the API doesn't expose account deletion.
+
+export enum AccountsType {
+  Student = 'student',
+  Teacher = 'teacher',
+}
+
+export interface Account {
+  id: string;
+  email: string;
+  type: AccountsType;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AccountWithProfile = Account & {
+  profile: (Student | Teacher) & { first_name: string; last_name: string };
+};
+
+export interface CreateAccountDto {
+  email: string;
+  type: AccountsType;
+  first_name: string;
+  last_name: string;
+  /** Required when type is Student. */
+  classId?: number;
+  /** Optional, only used when type is Teacher. If omitted, the teacher is a director. */
+  directorId?: string;
+}
+
+export interface UpdateAccountDto {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  /** Only applies to student accounts. */
+  classId?: number;
+  /** Only applies to teacher accounts. `null` clears the current director. */
+  directorId?: string | null;
+}
+
+export const accountsApi = {
+  list: () => apiFetch<AccountWithProfile[]>('/accounts'),
+  listDirectors: () =>
+    apiFetch<AccountWithProfile[]>('/accounts?directorsOnly=true'),
+  async listTeachers() {
+    const accounts = await apiFetch<AccountWithProfile[]>('/accounts');
+    return accounts.filter((account) => account.type === AccountsType.Teacher);
+  },
+  async listStudents() {
+    const accounts = await apiFetch<AccountWithProfile[]>('/accounts');
+    return accounts.filter((account) => account.type === AccountsType.Student);
+  },
+  get: (id: string) => apiFetch<AccountWithProfile>(`/accounts/${id}`),
+  create: (data: CreateAccountDto) =>
+    apiFetch<AccountWithProfile>('/accounts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: UpdateAccountDto) =>
+    apiFetch<AccountWithProfile>(`/accounts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+};

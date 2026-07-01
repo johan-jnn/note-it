@@ -10,6 +10,7 @@
     { href: '/lessons', label: 'Cours' },
     { href: '/assignments', label: 'Devoirs' },
     { href: '/grades', label: 'Notes' },
+    { href: '/accounts', label: 'Comptes' },
   ];
 </script>
 

@@ -16,7 +16,14 @@ export class AssignmentsService {
   ) {}
 
   private async findLessonOrFail(id: number): Promise<Lesson> {
-    const lesson = await this.lessonRepository.findOne({ where: { id } });
+    const lesson = await this.lessonRepository.findOne({
+      where: { id },
+      relations: {
+        class: true,
+        subject: true,
+        teacher: true,
+      },
+    });
     if (!lesson) {
       throw new NotFoundException(`Lesson with ID ${id} not found`);
     }
@@ -35,14 +42,26 @@ export class AssignmentsService {
 
   async findAll(): Promise<Assignment[]> {
     return await this.assignmentRepository.find({
-      relations: { lesson: true },
+      relations: {
+        lesson: {
+          class: true,
+          subject: true,
+          teacher: true,
+        },
+      },
     });
   }
 
   async findOne(id: number): Promise<Assignment> {
     const foundAssignment = await this.assignmentRepository.findOne({
       where: { id },
-      relations: { lesson: true },
+      relations: {
+        lesson: {
+          class: true,
+          subject: true,
+          teacher: true,
+        },
+      },
     });
     if (!foundAssignment) {
       throw new NotFoundException(`Assignment with ID ${id} not found`);

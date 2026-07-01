@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { ApiError, lessonsApi, type Lesson } from '$lib/api';
+  import { onMount } from 'svelte';
 
   let items = $state<Lesson[]>([]);
   let loading = $state(true);
@@ -15,7 +15,8 @@
     try {
       items = await lessonsApi.list();
     } catch (e) {
-      error = e instanceof ApiError ? e.message : 'Échec du chargement des cours';
+      error =
+        e instanceof ApiError ? e.message : 'Échec du chargement des cours';
     } finally {
       loading = false;
     }

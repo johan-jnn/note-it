@@ -1,7 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { ApiError, assignmentsApi, gradesApi, type Assignment } from '$lib/api';
+  import {
+    ApiError,
+    accountsApi,
+    assignmentsApi,
+    gradesApi,
+    type AccountWithProfile,
+    type Assignment,
+  } from '$lib/api';
 
   let value = $state<number | null>(null);
   let comment = $state('');
@@ -11,12 +18,16 @@
   let error = $state('');
 
   let assignments = $state<Assignment[]>([]);
+  let students = $state<AccountWithProfile[]>([]);
 
   onMount(async () => {
     try {
-      assignments = await assignmentsApi.list();
+      [assignments, students] = await Promise.all([
+        assignmentsApi.list(),
+        accountsApi.listStudents(),
+      ]);
     } catch (e) {
-      error = e instanceof ApiError ? e.message : 'Échec du chargement des devoirs';
+      error = e instanceof ApiError ? e.message : 'Échec du chargement des devoirs/élèves';
     }
   });
 
@@ -69,8 +80,13 @@
   </div>
 
   <div class="field">
-    <label for="studentId">Élève (UUID)</label>
-    <input id="studentId" type="text" bind:value={studentId} required />
+    <label for="studentId">Élève</label>
+    <select id="studentId" bind:value={studentId} required>
+      <option value="" disabled selected>Sélectionner un élève</option>
+      {#each students as s (s.id)}
+        <option value={s.id}>{s.profile.first_name} {s.profile.last_name}</option>
+      {/each}
+    </select>
   </div>
 
   <div class="form-actions">

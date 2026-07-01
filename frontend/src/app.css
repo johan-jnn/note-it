@@ -212,6 +212,21 @@ form.entity-form {
   font-size: 13px;
 }
 
+.success {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.hint {
+  color: var(--text);
+  font-size: 12px;
+  margin: 2px 0 0;
+}
+
 .back-link {
   display: inline-block;
   margin-bottom: 16px;
