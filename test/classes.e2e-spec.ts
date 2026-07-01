@@ -84,7 +84,10 @@ describe('ClassesController (e2e)', () => {
     });
 
     it('should return 400 for invalid data', async () => {
-      return request(app.getHttpServer()).post('/api/classes').send({}).expect(400);
+      return request(app.getHttpServer())
+        .post('/api/classes')
+        .send({})
+        .expect(400);
     });
   });
 
@@ -168,7 +171,9 @@ describe('ClassesController (e2e)', () => {
     it('should return 404 if class to delete not found', async () => {
       mockClassesRepository.findOne.mockResolvedValue(null);
 
-      return request(app.getHttpServer()).delete('/api/classes/999').expect(404);
+      return request(app.getHttpServer())
+        .delete('/api/classes/999')
+        .expect(404);
     });
   });
 });

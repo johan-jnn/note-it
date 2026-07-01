@@ -144,9 +144,7 @@ describe('LessonsService', () => {
       mockLessonRepository.create.mockReturnValue(mockLesson);
       mockLessonRepository.save.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.create(createDto)).rejects.toThrow(
-        'Database error',
-      );
+      await expect(service.create(createDto)).rejects.toThrow('Database error');
     });
   });
 

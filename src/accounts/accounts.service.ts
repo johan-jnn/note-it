@@ -47,7 +47,9 @@ export class AccountsService {
           const account = accountsById.get(director.id);
           return account ? { ...account, profile: director } : undefined;
         })
-        .filter((account): account is AccountWithProfile => account !== undefined);
+        .filter(
+          (account): account is AccountWithProfile => account !== undefined,
+        );
     }
 
     const [accounts, students, teachers] = await Promise.all([
@@ -56,8 +58,12 @@ export class AccountsService {
       this.teacherRepository.find({ relations: { director: true } }),
     ]);
 
-    const studentsById = new Map(students.map((student) => [student.id, student]));
-    const teachersById = new Map(teachers.map((teacher) => [teacher.id, teacher]));
+    const studentsById = new Map(
+      students.map((student) => [student.id, student]),
+    );
+    const teachersById = new Map(
+      teachers.map((teacher) => [teacher.id, teacher]),
+    );
 
     return accounts.map((account) => ({
       ...account,
@@ -177,7 +183,9 @@ export class AccountsService {
     });
   }
 
-  async create(createAccountDto: CreateAccountDto): Promise<AccountWithProfile> {
+  async create(
+    createAccountDto: CreateAccountDto,
+  ): Promise<AccountWithProfile> {
     const { email, type, first_name, last_name, classId, directorId } =
       createAccountDto;
 

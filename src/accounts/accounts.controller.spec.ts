@@ -117,7 +117,9 @@ describe('AccountsController', () => {
     });
 
     it('should throw NotFoundException if the account does not exist', async () => {
-      service.findOne.mockRejectedValue(new NotFoundException('Account not found'));
+      service.findOne.mockRejectedValue(
+        new NotFoundException('Account not found'),
+      );
 
       await expect(controller.findOne('missing-uuid')).rejects.toThrow(
         NotFoundException,
@@ -146,7 +148,9 @@ describe('AccountsController', () => {
     });
 
     it('should throw NotFoundException if the account does not exist', async () => {
-      service.update.mockRejectedValue(new NotFoundException('Account not found'));
+      service.update.mockRejectedValue(
+        new NotFoundException('Account not found'),
+      );
 
       await expect(
         controller.update('missing-uuid', { first_name: 'Johnny' }),

@@ -121,9 +121,7 @@ describe('SubjectsService', () => {
       mockRepository.create.mockReturnValue(mockSubject);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.create(createDto)).rejects.toThrow(
-        'Database error',
-      );
+      await expect(service.create(createDto)).rejects.toThrow('Database error');
     });
   });
 

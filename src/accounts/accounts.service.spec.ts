@@ -264,7 +264,9 @@ describe('AccountsService', () => {
     it('should throw NotFoundException if the new class does not exist', async () => {
       mockAccountRepository.findOne.mockResolvedValue({ ...account });
       mockManager.findOne.mockImplementation((entity) =>
-        entity === Student ? Promise.resolve({ ...student }) : Promise.resolve(null),
+        entity === Student
+          ? Promise.resolve({ ...student })
+          : Promise.resolve(null),
       );
 
       await expect(

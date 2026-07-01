@@ -23,7 +23,7 @@ const mockAssignment = {
 
 const mockAssignments = [
   mockAssignment,
-  { ...mockAssignment, id: 2, title: 'Test Assignment 2' } as unknown as Assignment,
+  { ...mockAssignment, id: 2, title: 'Test Assignment 2' },
 ];
 
 describe('AssignmentsService', () => {
@@ -112,9 +112,7 @@ describe('AssignmentsService', () => {
       mockRepository.create.mockReturnValue(mockAssignment);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.create(createDto)).rejects.toThrow(
-        'Database error',
-      );
+      await expect(service.create(createDto)).rejects.toThrow('Database error');
     });
   });
 
@@ -182,7 +180,10 @@ describe('AssignmentsService', () => {
     });
 
     it('should update the lesson when lessonId is provided', async () => {
-      const anotherLesson = { id: 2, name: 'Another Lesson' } as unknown as Lesson;
+      const anotherLesson = {
+        id: 2,
+        name: 'Another Lesson',
+      } as unknown as Lesson;
       mockLessonRepository.findOne.mockResolvedValue(anotherLesson);
 
       mockRepository.findOne.mockResolvedValue({ ...mockAssignment });
