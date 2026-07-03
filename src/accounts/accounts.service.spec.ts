@@ -1,15 +1,15 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException } from '@nestjs/common';
 import { In, IsNull } from 'typeorm';
-import { AccountsService } from './accounts.service';
 import { Class } from '../classes/entities/class.entity';
-import { Teacher } from './entities/teacher.entity';
-import { Student } from './entities/student.entity';
-import { Account } from './entities/account.entity';
+import { AccountsType } from '../common/enums/accountsType.enum';
+import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
-import { AccountsType } from '../common/enums/accountsType.enum';
+import { Account } from './entities/account.entity';
+import { Student } from './entities/student.entity';
+import { Teacher } from './entities/teacher.entity';
 
 describe('AccountsService', () => {
   let service: AccountsService;
@@ -35,8 +35,14 @@ describe('AccountsService', () => {
     set: jest.fn().mockResolvedValue(undefined),
   };
   const mockManager = {
-    create: jest.fn((entity, data) =>
-      entity === Account ? { id: 'new-account-uuid', ...data } : { ...data },
+    create: jest.fn(
+      (entity: typeof Account, data) =>
+        Object.assign(
+          new Account(),
+          entity === Account
+            ? { id: 'new-account-uuid', ...data }
+            : { ...data },
+        ) as Account,
     ),
     save: jest.fn((data) => Promise.resolve(data)),
     findOne: jest.fn(),
@@ -291,15 +297,17 @@ describe('AccountsService', () => {
     it('should attach a new director', async () => {
       const newDirector = { id: 'director-uuid' } as Teacher;
       mockAccountRepository.findOne.mockResolvedValue({ ...account });
-      mockManager.findOne.mockImplementation((entity, options: any) => {
-        if (entity === Teacher && options.where.id === 'teacher-uuid') {
-          return Promise.resolve({ ...teacher });
-        }
-        if (entity === Teacher && options.where.id === 'director-uuid') {
-          return Promise.resolve(newDirector);
-        }
-        return Promise.resolve(null);
-      });
+      mockManager.findOne.mockImplementation(
+        (entity, options: { where: Teacher }) => {
+          if (entity === Teacher && options.where.id === 'teacher-uuid') {
+            return Promise.resolve({ ...teacher });
+          }
+          if (entity === Teacher && options.where.id === 'director-uuid') {
+            return Promise.resolve(newDirector);
+          }
+          return Promise.resolve(null);
+        },
+      );
 
       const result = await service.update('teacher-uuid', {
         directorId: 'director-uuid',
@@ -329,12 +337,14 @@ describe('AccountsService', () => {
 
     it('should throw NotFoundException if the new director does not exist', async () => {
       mockAccountRepository.findOne.mockResolvedValue({ ...account });
-      mockManager.findOne.mockImplementation((entity, options: any) => {
-        if (entity === Teacher && options.where.id === 'teacher-uuid') {
-          return Promise.resolve({ ...teacher });
-        }
-        return Promise.resolve(null);
-      });
+      mockManager.findOne.mockImplementation(
+        (entity, options: { where: Teacher }) => {
+          if (entity === Teacher && options.where.id === 'teacher-uuid') {
+            return Promise.resolve({ ...teacher });
+          }
+          return Promise.resolve(null);
+        },
+      );
 
       await expect(
         service.update('teacher-uuid', { directorId: 'missing-uuid' }),
