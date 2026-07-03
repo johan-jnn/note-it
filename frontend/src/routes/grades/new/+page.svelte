@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import {
     ApiError,
@@ -9,6 +8,7 @@
     type AccountWithProfile,
     type Assignment,
   } from '$lib/api';
+  import { onMount } from 'svelte';
 
   let value = $state<number | null>(null);
   let comment = $state('');
@@ -20,6 +20,10 @@
   let assignments = $state<Assignment[]>([]);
   let students = $state<AccountWithProfile[]>([]);
 
+  const scale = $derived(
+    assignments.find(({ id }) => assignmentId === id)?.scale,
+  );
+
   onMount(async () => {
     try {
       [assignments, students] = await Promise.all([
@@ -27,7 +31,10 @@
         accountsApi.listStudents(),
       ]);
     } catch (e) {
-      error = e instanceof ApiError ? e.message : 'Échec du chargement des devoirs/élèves';
+      error =
+        e instanceof ApiError
+          ? e.message
+          : 'Échec du chargement des devoirs/élèves';
     }
   });
 
@@ -44,7 +51,10 @@
       });
       goto(`/grades/${created.id}`);
     } catch (err) {
-      error = err instanceof ApiError ? err.message : 'Échec de la création de la note';
+      error =
+        err instanceof ApiError
+          ? err.message
+          : 'Échec de la création de la note';
     } finally {
       saving = false;
     }
@@ -61,7 +71,15 @@
 <form class="entity-form" onsubmit={submit}>
   <div class="field">
     <label for="value">Valeur</label>
-    <input id="value" type="number" step="0.01" bind:value required />
+    <input
+      id="value"
+      type="number"
+      max={scale}
+      placeholder={typeof scale === 'number' ? `Noté sur ${scale}` : undefined}
+      step="0.01"
+      bind:value
+      required
+    />
   </div>
 
   <div class="field">
@@ -84,7 +102,9 @@
     <select id="studentId" bind:value={studentId} required>
       <option value="" disabled selected>Sélectionner un élève</option>
       {#each students as s (s.id)}
-        <option value={s.id}>{s.profile.first_name} {s.profile.last_name}</option>
+        <option value={s.id}
+          >{s.profile.first_name} {s.profile.last_name}</option
+        >
       {/each}
     </select>
   </div>

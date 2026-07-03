@@ -1,6 +1,6 @@
 import { Grade } from './entities/grade.entity';
 
-export const SUBJECT_VALIDATION_THRESHOLD = 10;
+export const SUBJECT_VALIDATION_THRESHOLD = 8;
 
 /**
  * Weighted average of a set of grades, each grade being normalized to a

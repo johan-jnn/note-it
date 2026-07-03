@@ -204,9 +204,16 @@ export interface CreateGradeDto {
 
 export type UpdateGradeDto = Partial<CreateGradeDto>;
 
-export const gradesApi = resourceClient<Grade, CreateGradeDto, UpdateGradeDto>(
-  '/grades',
-);
+export interface SubjectAverage {
+  average: number | null;
+  validated: boolean | null;
+}
+
+export const gradesApi = {
+  ...resourceClient<Grade, CreateGradeDto, UpdateGradeDto>('/grades'),
+  getAverage: (studentId: string, subjectId: number) =>
+    apiFetch<SubjectAverage>(`/grades/average/${studentId}/${subjectId}`),
+};
 
 // --- Accounts ---
 // Note: the API doesn't expose account deletion.

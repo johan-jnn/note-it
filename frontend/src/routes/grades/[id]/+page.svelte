@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import {
@@ -11,6 +10,7 @@
     type Assignment,
     type Grade,
   } from '$lib/api';
+  import { onMount } from 'svelte';
 
   const id = Number(page.params.id);
 
@@ -25,6 +25,10 @@
 
   let assignments = $state<Assignment[]>([]);
   let students = $state<AccountWithProfile[]>([]);
+
+  const scale = $derived(
+    assignments.find(({ id }) => assignmentId === id)?.scale,
+  );
 
   onMount(load);
 
@@ -42,7 +46,8 @@
       assignmentId = item.assignment.id;
       studentId = item.student.id;
     } catch (e) {
-      error = e instanceof ApiError ? e.message : 'Échec du chargement de la note';
+      error =
+        e instanceof ApiError ? e.message : 'Échec du chargement de la note';
     } finally {
       loading = false;
     }
@@ -60,7 +65,10 @@
         studentId: studentId || undefined,
       });
     } catch (err) {
-      error = err instanceof ApiError ? err.message : 'Échec de la mise à jour de la note';
+      error =
+        err instanceof ApiError
+          ? err.message
+          : 'Échec de la mise à jour de la note';
     } finally {
       saving = false;
     }
@@ -72,7 +80,10 @@
       await gradesApi.remove(id);
       goto('/grades');
     } catch (err) {
-      error = err instanceof ApiError ? err.message : 'Échec de la suppression de la note';
+      error =
+        err instanceof ApiError
+          ? err.message
+          : 'Échec de la suppression de la note';
     }
   }
 </script>
@@ -91,7 +102,17 @@
   <form class="entity-form" onsubmit={submit}>
     <div class="field">
       <label for="value">Valeur</label>
-      <input id="value" type="number" step="0.01" bind:value required />
+      <input
+        id="value"
+        type="number"
+        step="0.01"
+        max={scale}
+        placeholder={typeof scale === 'number'
+          ? `Noté sur ${scale}`
+          : undefined}
+        bind:value
+        required
+      />
     </div>
 
     <div class="field">
@@ -112,7 +133,9 @@
       <label for="studentId">Élève</label>
       <select id="studentId" bind:value={studentId} required>
         {#each students as s (s.id)}
-          <option value={s.id}>{s.profile.first_name} {s.profile.last_name}</option>
+          <option value={s.id}
+            >{s.profile.first_name} {s.profile.last_name}</option
+          >
         {/each}
       </select>
     </div>
@@ -121,7 +144,9 @@
       <button class="button" type="submit" disabled={saving}>
         {saving ? 'Enregistrement…' : 'Enregistrer'}
       </button>
-      <button class="button danger" type="button" onclick={remove}>Supprimer</button>
+      <button class="button danger" type="button" onclick={remove}
+        >Supprimer</button
+      >
     </div>
   </form>
 

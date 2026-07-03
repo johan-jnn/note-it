@@ -6,8 +6,12 @@
     ApiError,
     accountsApi,
     classesApi,
+    gradesApi,
+    subjectsApi,
     type AccountWithProfile,
     type Class,
+    type Subject,
+    type SubjectAverage,
   } from '$lib/api';
 
   const id = page.params.id as string;
@@ -25,6 +29,9 @@
   let saving = $state(false);
   let error = $state('');
 
+  let averages = $state<(Subject & SubjectAverage)[]>([]);
+  let averagesLoading = $state(false);
+
   onMount(load);
 
   async function load() {
@@ -39,6 +46,7 @@
       if (item.type === AccountsType.Student) {
         classes = await classesApi.list();
         classId = (item.profile as unknown as { class: Class }).class.id;
+        loadAverages();
       } else {
         const allDirectors = await accountsApi.listDirectors();
         directors = allDirectors.filter((d) => d.id !== id);
@@ -48,6 +56,23 @@
       error = e instanceof ApiError ? e.message : 'Échec du chargement du compte';
     } finally {
       loading = false;
+    }
+  }
+
+  async function loadAverages() {
+    averagesLoading = true;
+    try {
+      const subjects = await subjectsApi.list();
+      averages = await Promise.all(
+        subjects.map(async (subject) => ({
+          ...subject,
+          ...(await gradesApi.getAverage(id, subject.id)),
+        })),
+      );
+    } catch (e) {
+      error = e instanceof ApiError ? e.message : 'Échec du chargement des moyennes';
+    } finally {
+      averagesLoading = false;
     }
   }
 
@@ -133,4 +158,41 @@
       item.updated_at,
     ).toLocaleString()}
   </p>
+
+  {#if item.type === AccountsType.Student}
+    <h2>Moyennes</h2>
+
+    {#if averagesLoading}
+      <p>Chargement…</p>
+    {:else if averages.length === 0}
+      <p>Aucune matière pour le moment.</p>
+    {:else}
+      <table>
+        <thead>
+          <tr>
+            <th>Matière</th>
+            <th>Moyenne</th>
+            <th>Validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each averages as subject (subject.id)}
+            <tr>
+              <td>{subject.name}</td>
+              <td>{subject.average !== null ? `${subject.average.toFixed(2)} / 20` : '—'}</td>
+              <td>
+                {#if subject.validated === null}
+                  —
+                {:else if subject.validated}
+                  <span class="success">Validée</span>
+                {:else}
+                  <span class="error">Non validée</span>
+                {/if}
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    {/if}
+  {/if}
 {/if}
