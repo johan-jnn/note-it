@@ -1,10 +1,11 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { GradesController } from './grades.controller';
-import { GradesService } from './grades.service';
-import { Grade } from './entities/grade.entity';
 import { CreateGradeDto } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
-import { NotFoundException } from '@nestjs/common';
+import { Grade } from './entities/grade.entity';
+import { SUBJECT_VALIDATION_THRESHOLD } from './grade-average.util';
+import { GradesController } from './grades.controller';
+import { GradesService } from './grades.service';
 
 const mockGrade = {
   id: 1,
@@ -178,11 +179,13 @@ describe('GradesController', () => {
     });
 
     it('should return validated=false when the average is below the threshold', async () => {
-      mockGradeService.getStudentSubjectAverage.mockResolvedValue(8);
+      const studentAvg = SUBJECT_VALIDATION_THRESHOLD - 2;
+
+      mockGradeService.getStudentSubjectAverage.mockResolvedValue(studentAvg);
 
       const result = await controller.getAverage('student-uuid', 1);
 
-      expect(result).toEqual({ average: 8, validated: false });
+      expect(result).toEqual({ average: studentAvg, validated: false });
     });
 
     it('should return validated=null when there is no grade to judge', async () => {

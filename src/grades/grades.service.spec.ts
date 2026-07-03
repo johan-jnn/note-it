@@ -1,13 +1,14 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException } from '@nestjs/common';
-import { GradesService } from './grades.service';
-import { Grade } from './entities/grade.entity';
-import { Assignment } from '../assignments/entities/assignment.entity';
 import { Student } from '../accounts/entities/student.entity';
+import { Assignment } from '../assignments/entities/assignment.entity';
 import { Subject } from '../subjects/entities/subject.entity';
 import { CreateGradeDto } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
+import { Grade } from './entities/grade.entity';
+import { SUBJECT_VALIDATION_THRESHOLD } from './grade-average.util';
+import { GradesService } from './grades.service';
 
 const mockAssignment = {
   id: 1,
@@ -315,7 +316,10 @@ describe('GradesService', () => {
   describe('isStudentSubjectValidated', () => {
     it('should return true when the average is above the threshold', async () => {
       mockRepository.find.mockResolvedValue([
-        { value: 15, assignment: { scale: 20, coefficient: 1 } },
+        {
+          value: SUBJECT_VALIDATION_THRESHOLD + 2,
+          assignment: { scale: 20, coefficient: 1 },
+        },
       ]);
 
       const result = await service.isStudentSubjectValidated('student-uuid', 1);
@@ -325,7 +329,10 @@ describe('GradesService', () => {
 
     it('should return true when the average is exactly the threshold (10/20)', async () => {
       mockRepository.find.mockResolvedValue([
-        { value: 10, assignment: { scale: 20, coefficient: 1 } },
+        {
+          value: SUBJECT_VALIDATION_THRESHOLD,
+          assignment: { scale: 20, coefficient: 1 },
+        },
       ]);
 
       const result = await service.isStudentSubjectValidated('student-uuid', 1);
@@ -335,7 +342,10 @@ describe('GradesService', () => {
 
     it('should return false when the average is below the threshold', async () => {
       mockRepository.find.mockResolvedValue([
-        { value: 9, assignment: { scale: 20, coefficient: 1 } },
+        {
+          value: SUBJECT_VALIDATION_THRESHOLD - 2,
+          assignment: { scale: 20, coefficient: 1 },
+        },
       ]);
 
       const result = await service.isStudentSubjectValidated('student-uuid', 1);
