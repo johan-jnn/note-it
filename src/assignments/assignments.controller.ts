@@ -1,34 +1,54 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { AssignmentsService } from './assignments.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
+import { Assignment } from './entities/assignment.entity';
 
 @Controller('assignments')
 export class AssignmentsController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
 
   @Post()
-  create(@Body() createAssignmentDto: CreateAssignmentDto) {
+  async create(
+    @Body() createAssignmentDto: CreateAssignmentDto,
+  ): Promise<Assignment> {
     return this.assignmentsService.create(createAssignmentDto);
   }
 
   @Get()
-  findAll() {
+  async findAll(): Promise<Assignment[]> {
     return this.assignmentsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.assignmentsService.findOne(+id);
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Assignment> {
+    return this.assignmentsService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAssignmentDto: UpdateAssignmentDto) {
-    return this.assignmentsService.update(+id, updateAssignmentDto);
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateAssignmentDto: UpdateAssignmentDto,
+  ): Promise<Assignment> {
+    return this.assignmentsService.update(id, updateAssignmentDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.assignmentsService.remove(+id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
+    await this.assignmentsService.remove(id);
+    return {
+      message: `Assignment with ID ${id} has been successfully deleted`,
+    };
   }
 }

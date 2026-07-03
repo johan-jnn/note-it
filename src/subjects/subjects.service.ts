@@ -1,26 +1,65 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Teacher } from '../accounts/entities/teacher.entity';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
+import { Subject } from './entities/subject.entity';
 
 @Injectable()
 export class SubjectsService {
-  create(createSubjectDto: CreateSubjectDto) {
-    return 'This action adds a new subject';
+  constructor(
+    @InjectRepository(Subject)
+    private readonly subjectRepository: Repository<Subject>,
+    @InjectRepository(Teacher)
+    private readonly teacherRepository: Repository<Teacher>,
+  ) {}
+
+  private async findTeacherOrFail(id: string): Promise<Teacher> {
+    const teacher = await this.teacherRepository.findOne({ where: { id } });
+    if (!teacher) {
+      throw new NotFoundException(`Teacher with ID ${id} not found`);
+    }
+    return teacher;
   }
 
-  findAll() {
-    return `This action returns all subjects`;
+  async create(createSubjectDto: CreateSubjectDto): Promise<Subject> {
+    const { ownerId, ...rest } = createSubjectDto;
+    const owner = await this.findTeacherOrFail(ownerId);
+    const newSubject = this.subjectRepository.create({ ...rest, owner });
+    return await this.subjectRepository.save(newSubject);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} subject`;
+  async findAll(): Promise<Subject[]> {
+    return await this.subjectRepository.find({ relations: { owner: true } });
   }
 
-  update(id: number, updateSubjectDto: UpdateSubjectDto) {
-    return `This action updates a #${id} subject`;
+  async findOne(id: number): Promise<Subject> {
+    const foundSubject = await this.subjectRepository.findOne({
+      where: { id },
+      relations: { owner: true },
+    });
+    if (!foundSubject) {
+      throw new NotFoundException(`Subject with ID ${id} not found`);
+    }
+    return foundSubject;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} subject`;
+  async update(
+    id: number,
+    updateSubjectDto: UpdateSubjectDto,
+  ): Promise<Subject> {
+    const existingSubject = await this.findOne(id);
+    const { ownerId, ...rest } = updateSubjectDto;
+    Object.assign(existingSubject, rest);
+    if (ownerId) {
+      existingSubject.owner = await this.findTeacherOrFail(ownerId);
+    }
+    return await this.subjectRepository.save(existingSubject);
+  }
+
+  async remove(id: number): Promise<void> {
+    const existingSubject = await this.findOne(id);
+    await this.subjectRepository.remove(existingSubject);
   }
 }

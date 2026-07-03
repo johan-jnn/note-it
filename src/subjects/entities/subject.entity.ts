@@ -7,17 +7,17 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Teacher } from '../../auth/entities/teacher.entity';
+import { Teacher } from '../../accounts/entities/teacher.entity';
 
 @Entity('subjects')
 export class Subject {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column('string')
+  @Column('varchar')
   name: string;
 
-  @Column('string', {
+  @Column('varchar', {
     nullable: true,
   })
   description?: string;

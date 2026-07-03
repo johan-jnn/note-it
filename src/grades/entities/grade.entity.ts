@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Assignment } from '../../assignments/entities/assignment.entity';
-import { Student } from '../../auth/entities/student.entity';
+import { Student } from '../../accounts/entities/student.entity';
 
 @Entity('grades')
 export class Grade {
@@ -20,7 +20,7 @@ export class Grade {
     precision: 2,
   })
   value: number;
-  @Column('string', {
+  @Column('varchar', {
     nullable: true,
   })
   comment?: string;

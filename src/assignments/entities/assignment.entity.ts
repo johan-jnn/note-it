@@ -14,7 +14,7 @@ export class Assignment {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column('string')
+  @Column('varchar')
   title: string;
 
   @Column('datetime', {

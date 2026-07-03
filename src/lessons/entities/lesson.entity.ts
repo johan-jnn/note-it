@@ -1,3 +1,4 @@
+import { Expose } from 'class-transformer';
 import {
   Column,
   CreateDateColumn,
@@ -7,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Teacher } from '../../auth/entities/teacher.entity';
+import { Teacher } from '../../accounts/entities/teacher.entity';
 import { Class } from '../../classes/entities/class.entity';
 import { Subject } from '../../subjects/entities/subject.entity';
 
@@ -16,7 +17,7 @@ export class Lesson {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column('string', {
+  @Column('varchar', {
     nullable: true,
   })
   name?: string;
@@ -25,7 +26,8 @@ export class Lesson {
    * This returns the name of the lesson or, if not defined,
    * the name of the lesson's subject's name
    */
-  get real_name() {
+  @Expose()
+  get real_name(): string {
     return this.name ?? this.subject.name;
   }
 

@@ -1,0 +1,71 @@
+version: '3.8'
+name: Note-It - Production
+
+services:
+  # todo -> replace with mariadb
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=note_it
+      - MYSQL_USER=note_it_user
+      - MYSQL_PASSWORD=note_it_password
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - note-it
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: --default-authentication-plugin=mysql_native_password
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '80:3000'
+    environment:
+      - NODE_ENV=development
+      - APP_PORT=3000
+      - APP_HOST=localhost
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+      - DB_NAME=note_it
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - note-it
+    healthcheck:
+      test: ['CMD', 'curl', '-qf', 'http://localhost:3000/api']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - note-it
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  db-data:
+  redis-data:
+
+networks:
+  note-it:

@@ -18,10 +18,14 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:integration": "jest --config ./test/jest-integration.json",
     "orm": "npx typeorm-ts-node-commonjs",
-    "orm:app": "npm run orm -d database/sources/app.datasource.ts",
-    "orm:local": "npm run orm -d database/sources/local.datasource.ts",
-    "orm:tests": "npm run orm -d database/sources/tests.datasource.ts"
+    "linked-orm": "npx typeorm-ts-node-commonjs -d database/sources/_resolver.ts",
+    "orm:app": "NODE_ENV=production npm run linked-orm",
+    "orm:tests": "NODE_ENV=tests npm run linked-orm",
+    "orm:local": "NODE_ENV=local npm run linked-orm",
+    "front:build": "cd frontend && npm run build",
+    "front:dev": "cd frontend && npm run dev"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -30,6 +34,8 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.2",
     "better-sqlite3": "^12.11.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
     "dotenv-expand": "^13.0.0",
     "mysql2": "^3.22.5",
@@ -56,13 +62,12 @@
     "jest": "^30.0.0",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
-    "sqlite": "^5.1.1",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {

@@ -1,18 +1,364 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Student } from '../accounts/entities/student.entity';
+import { Assignment } from '../assignments/entities/assignment.entity';
+import { Subject } from '../subjects/entities/subject.entity';
+import { CreateGradeDto } from './dto/create-grade.dto';
+import { UpdateGradeDto } from './dto/update-grade.dto';
+import { Grade } from './entities/grade.entity';
+import { SUBJECT_VALIDATION_THRESHOLD } from './grade-average.util';
 import { GradesService } from './grades.service';
+
+const mockAssignment = {
+  id: 1,
+  title: 'Test Assignment',
+} as unknown as Assignment;
+const mockStudent = {
+  id: 'student-uuid',
+  first_name: 'John',
+  last_name: 'Doe',
+} as unknown as Student;
+
+const mockGrade = {
+  id: 1,
+  value: 15,
+  comment: 'Good work',
+  assignment: mockAssignment,
+  student: mockStudent,
+  created_at: new Date(),
+  updated_at: new Date(),
+} as unknown as Grade;
+
+const mockGrades = [
+  mockGrade,
+  { ...mockGrade, id: 2, value: 12, comment: 'Average' } as unknown as Grade,
+];
 
 describe('GradesService', () => {
   let service: GradesService;
 
+  const mockRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+    findOne: jest.fn(),
+    remove: jest.fn(),
+  };
+  const mockAssignmentRepository = { findOne: jest.fn() };
+  const mockStudentRepository = { findOne: jest.fn() };
+  const mockSubjectRepository = { findOne: jest.fn() };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GradesService],
+      providers: [
+        GradesService,
+        {
+          provide: getRepositoryToken(Grade),
+          useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Assignment),
+          useValue: mockAssignmentRepository,
+        },
+        {
+          provide: getRepositoryToken(Student),
+          useValue: mockStudentRepository,
+        },
+        {
+          provide: getRepositoryToken(Subject),
+          useValue: mockSubjectRepository,
+        },
+      ],
     }).compile();
 
     service = module.get<GradesService>(GradesService);
+
+    mockAssignmentRepository.findOne.mockResolvedValue(mockAssignment);
+    mockStudentRepository.findOne.mockResolvedValue(mockStudent);
+    mockSubjectRepository.findOne.mockResolvedValue({
+      id: 1,
+      name: 'Test Subject',
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('create', () => {
+    const createDto: CreateGradeDto = {
+      value: 15,
+      assignmentId: 1,
+      studentId: 'student-uuid',
+    };
+
+    it('should create a new grade', async () => {
+      const expectedResult = {
+        id: 1,
+        value: 15,
+        assignment: mockAssignment,
+        student: mockStudent,
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as unknown as Grade;
+
+      mockRepository.create.mockReturnValue(expectedResult);
+      mockRepository.save.mockResolvedValue(expectedResult);
+
+      const result = await service.create(createDto);
+
+      expect(mockAssignmentRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(mockStudentRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'student-uuid' },
+      });
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        value: 15,
+        assignment: mockAssignment,
+        student: mockStudent,
+      });
+      expect(mockRepository.save).toHaveBeenCalledWith(expectedResult);
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should throw NotFoundException if the assignment does not exist', async () => {
+      mockAssignmentRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.create(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw NotFoundException if the student does not exist', async () => {
+      mockStudentRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.create(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw an error if creation fails', async () => {
+      mockRepository.create.mockReturnValue(mockGrade);
+      mockRepository.save.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.create(createDto)).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return all grades', async () => {
+      mockRepository.find.mockResolvedValue(mockGrades);
+
+      const result = await service.findAll();
+
+      expect(mockRepository.find).toHaveBeenCalledWith({
+        relations: { assignment: true, student: true },
+      });
+      expect(result).toEqual(mockGrades);
+    });
+
+    it('should return an empty array if no grades exist', async () => {
+      mockRepository.find.mockResolvedValue([]);
+
+      const result = await service.findAll();
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a grade by ID', async () => {
+      mockRepository.findOne.mockResolvedValue(mockGrade);
+
+      const result = await service.findOne(1);
+
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { assignment: true, student: true },
+      });
+      expect(result).toEqual(mockGrade);
+    });
+
+    it('should throw NotFoundException if grade not found', async () => {
+      mockRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 999 },
+        relations: { assignment: true, student: true },
+      });
+    });
+  });
+
+  describe('update', () => {
+    it('should update a grade', async () => {
+      const updateDto: UpdateGradeDto = { value: 18 };
+      const existingGrade = { ...mockGrade };
+      const expectedResult = {
+        ...existingGrade,
+        value: 18,
+      };
+
+      mockRepository.findOne.mockResolvedValue(existingGrade);
+      mockRepository.save.mockResolvedValue(expectedResult);
+
+      const result = await service.update(1, updateDto);
+
+      expect(mockRepository.save).toHaveBeenCalledWith(expectedResult);
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should update the assignment/student when ids are provided', async () => {
+      const anotherAssignment = {
+        id: 2,
+        title: 'Another Assignment',
+      } as unknown as Assignment;
+      mockAssignmentRepository.findOne.mockResolvedValue(anotherAssignment);
+
+      mockRepository.findOne.mockResolvedValue({ ...mockGrade });
+      mockRepository.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
+
+      const result = await service.update(1, { assignmentId: 2 });
+
+      expect(mockAssignmentRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 2 },
+      });
+      expect(result.assignment).toEqual(anotherAssignment);
+    });
+
+    it('should throw NotFoundException if grade to update not found', async () => {
+      const updateDto: UpdateGradeDto = { value: 18 };
+
+      mockRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.update(999, updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('remove', () => {
+    it('should remove a grade', async () => {
+      mockRepository.findOne.mockResolvedValue(mockGrade);
+      mockRepository.remove.mockResolvedValue(mockGrade);
+
+      await service.remove(1);
+
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { assignment: true, student: true },
+      });
+      expect(mockRepository.remove).toHaveBeenCalledWith(mockGrade);
+    });
+
+    it('should throw NotFoundException if grade to remove not found', async () => {
+      mockRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.remove(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getStudentSubjectAverage', () => {
+    it('should compute the weighted average of the student grades for the subject', async () => {
+      mockRepository.find.mockResolvedValue([
+        { value: 15, assignment: { scale: 20, coefficient: 1 } },
+        { value: 8, assignment: { scale: 10, coefficient: 2 } },
+      ]);
+
+      const result = await service.getStudentSubjectAverage('student-uuid', 1);
+
+      // grade 1: 15/20*20 = 15, weight 1 -> 15
+      // grade 2: 8/10*20 = 16, weight 2 -> 32
+      // (15 + 32) / (1 + 2) = 15.666...
+      expect(result).toBeCloseTo(15.6667, 3);
+      expect(mockRepository.find).toHaveBeenCalledWith({
+        where: {
+          student: { id: 'student-uuid' },
+          assignment: { lesson: { subject: { id: 1 } } },
+        },
+        relations: { assignment: true },
+      });
+    });
+
+    it('should return null if the student has no grade for the subject', async () => {
+      mockRepository.find.mockResolvedValue([]);
+
+      const result = await service.getStudentSubjectAverage('student-uuid', 1);
+
+      expect(result).toBeNull();
+    });
+
+    it('should throw NotFoundException if the student does not exist', async () => {
+      mockStudentRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.getStudentSubjectAverage('unknown-uuid', 1),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if the subject does not exist', async () => {
+      mockSubjectRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.getStudentSubjectAverage('student-uuid', 999),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('isStudentSubjectValidated', () => {
+    it('should return true when the average is above the threshold', async () => {
+      mockRepository.find.mockResolvedValue([
+        {
+          value: SUBJECT_VALIDATION_THRESHOLD + 2,
+          assignment: { scale: 20, coefficient: 1 },
+        },
+      ]);
+
+      const result = await service.isStudentSubjectValidated('student-uuid', 1);
+
+      expect(result).toBe(true);
+    });
+
+    it('should return true when the average is exactly the threshold (10/20)', async () => {
+      mockRepository.find.mockResolvedValue([
+        {
+          value: SUBJECT_VALIDATION_THRESHOLD,
+          assignment: { scale: 20, coefficient: 1 },
+        },
+      ]);
+
+      const result = await service.isStudentSubjectValidated('student-uuid', 1);
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when the average is below the threshold', async () => {
+      mockRepository.find.mockResolvedValue([
+        {
+          value: SUBJECT_VALIDATION_THRESHOLD - 2,
+          assignment: { scale: 20, coefficient: 1 },
+        },
+      ]);
+
+      const result = await service.isStudentSubjectValidated('student-uuid', 1);
+
+      expect(result).toBe(false);
+    });
+
+    it('should return null when there is no grade to judge', async () => {
+      mockRepository.find.mockResolvedValue([]);
+
+      const result = await service.isStudentSubjectValidated('student-uuid', 1);
+
+      expect(result).toBeNull();
+    });
   });
 });
