@@ -18,11 +18,14 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:integration": "jest --config ./test/jest-integration.json",
     "orm": "npx typeorm-ts-node-commonjs",
     "linked-orm": "npx typeorm-ts-node-commonjs -d database/sources/_resolver.ts",
     "orm:app": "NODE_ENV=production npm run linked-orm",
     "orm:tests": "NODE_ENV=tests npm run linked-orm",
-    "orm:local": "NODE_ENV=local npm run linked-orm"
+    "orm:local": "NODE_ENV=local npm run linked-orm",
+    "front:build": "cd frontend && npm run build",
+    "front:dev": "cd frontend && npm run dev"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

@@ -12,6 +12,7 @@ import { GradesService } from './grades.service';
 import { CreateGradeDto } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
 import { Grade } from './entities/grade.entity';
+import { isSubjectValidated } from './grade-average.util';
 
 @Controller('grades')
 export class GradesController {
@@ -46,5 +47,17 @@ export class GradesController {
   ): Promise<{ message: string }> {
     await this.gradesService.remove(id);
     return { message: `Grade with ID ${id} has been successfully deleted` };
+  }
+
+  @Get('average/:studentId/:subjectId')
+  async getAverage(
+    @Param('studentId') studentId: string,
+    @Param('subjectId', ParseIntPipe) subjectId: number,
+  ): Promise<{ average: number | null; validated: boolean | null }> {
+    const average = await this.gradesService.getStudentSubjectAverage(
+      studentId,
+      subjectId,
+    );
+    return { average, validated: isSubjectValidated(average) };
   }
 }

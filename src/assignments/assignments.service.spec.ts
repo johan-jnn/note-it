@@ -90,6 +90,7 @@ describe('AssignmentsService', () => {
 
       expect(mockLessonRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
+        relations: { class: true, subject: true, teacher: true },
       });
       expect(mockRepository.create).toHaveBeenCalledWith({
         title: 'New Assignment',
@@ -123,7 +124,7 @@ describe('AssignmentsService', () => {
       const result = await service.findAll();
 
       expect(mockRepository.find).toHaveBeenCalledWith({
-        relations: { lesson: true },
+        relations: { lesson: { class: true, subject: true, teacher: true } },
       });
       expect(result).toEqual(mockAssignments);
     });
@@ -145,7 +146,7 @@ describe('AssignmentsService', () => {
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: { lesson: true },
+        relations: { lesson: { class: true, subject: true, teacher: true } },
       });
       expect(result).toEqual(mockAssignment);
     });
@@ -156,7 +157,7 @@ describe('AssignmentsService', () => {
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 999 },
-        relations: { lesson: true },
+        relations: { lesson: { class: true, subject: true, teacher: true } },
       });
     });
   });
@@ -195,6 +196,7 @@ describe('AssignmentsService', () => {
 
       expect(mockLessonRepository.findOne).toHaveBeenCalledWith({
         where: { id: 2 },
+        relations: { class: true, subject: true, teacher: true },
       });
       expect(result.lesson).toEqual(anotherLesson);
     });
@@ -219,7 +221,7 @@ describe('AssignmentsService', () => {
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: { lesson: true },
+        relations: { lesson: { class: true, subject: true, teacher: true } },
       });
       expect(mockRepository.remove).toHaveBeenCalledWith(mockAssignment);
     });

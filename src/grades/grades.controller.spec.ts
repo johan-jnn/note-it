@@ -31,6 +31,7 @@ const mockGradeService = {
   findOne: jest.fn(),
   update: jest.fn(),
   remove: jest.fn(),
+  getStudentSubjectAverage: jest.fn(),
 };
 
 describe('GradesController', () => {
@@ -160,6 +161,46 @@ describe('GradesController', () => {
       );
 
       await expect(controller.remove(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getAverage', () => {
+    it('should return the average and validated flag when the average is above the threshold', async () => {
+      mockGradeService.getStudentSubjectAverage.mockResolvedValue(15);
+
+      const result = await controller.getAverage('student-uuid', 1);
+
+      expect(service.getStudentSubjectAverage).toHaveBeenCalledWith(
+        'student-uuid',
+        1,
+      );
+      expect(result).toEqual({ average: 15, validated: true });
+    });
+
+    it('should return validated=false when the average is below the threshold', async () => {
+      mockGradeService.getStudentSubjectAverage.mockResolvedValue(8);
+
+      const result = await controller.getAverage('student-uuid', 1);
+
+      expect(result).toEqual({ average: 8, validated: false });
+    });
+
+    it('should return validated=null when there is no grade to judge', async () => {
+      mockGradeService.getStudentSubjectAverage.mockResolvedValue(null);
+
+      const result = await controller.getAverage('student-uuid', 1);
+
+      expect(result).toEqual({ average: null, validated: null });
+    });
+
+    it('should propagate NotFoundException if the student or subject does not exist', async () => {
+      mockGradeService.getStudentSubjectAverage.mockRejectedValue(
+        new NotFoundException('Student not found'),
+      );
+
+      await expect(controller.getAverage('unknown-uuid', 1)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

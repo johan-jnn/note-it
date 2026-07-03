@@ -5,6 +5,7 @@ import { GradesService } from './grades.service';
 import { Grade } from './entities/grade.entity';
 import { Assignment } from '../assignments/entities/assignment.entity';
 import { Student } from '../accounts/entities/student.entity';
+import { Subject } from '../subjects/entities/subject.entity';
 import { CreateGradeDto } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
 
@@ -45,6 +46,7 @@ describe('GradesService', () => {
   };
   const mockAssignmentRepository = { findOne: jest.fn() };
   const mockStudentRepository = { findOne: jest.fn() };
+  const mockSubjectRepository = { findOne: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -62,6 +64,10 @@ describe('GradesService', () => {
           provide: getRepositoryToken(Student),
           useValue: mockStudentRepository,
         },
+        {
+          provide: getRepositoryToken(Subject),
+          useValue: mockSubjectRepository,
+        },
       ],
     }).compile();
 
@@ -69,6 +75,10 @@ describe('GradesService', () => {
 
     mockAssignmentRepository.findOne.mockResolvedValue(mockAssignment);
     mockStudentRepository.findOne.mockResolvedValue(mockStudent);
+    mockSubjectRepository.findOne.mockResolvedValue({
+      id: 1,
+      name: 'Test Subject',
+    });
   });
 
   afterEach(() => {
@@ -252,6 +262,93 @@ describe('GradesService', () => {
       mockRepository.findOne.mockResolvedValue(null);
 
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getStudentSubjectAverage', () => {
+    it('should compute the weighted average of the student grades for the subject', async () => {
+      mockRepository.find.mockResolvedValue([
+        { value: 15, assignment: { scale: 20, coefficient: 1 } },
+        { value: 8, assignment: { scale: 10, coefficient: 2 } },
+      ]);
+
+      const result = await service.getStudentSubjectAverage('student-uuid', 1);
+
+      // grade 1: 15/20*20 = 15, weight 1 -> 15
+      // grade 2: 8/10*20 = 16, weight 2 -> 32
+      // (15 + 32) / (1 + 2) = 15.666...
+      expect(result).toBeCloseTo(15.6667, 3);
+      expect(mockRepository.find).toHaveBeenCalledWith({
+        where: {
+          student: { id: 'student-uuid' },
+          assignment: { lesson: { subject: { id: 1 } } },
+        },
+        relations: { assignment: true },
+      });
+    });
+
+    it('should return null if the student has no grade for the subject', async () => {
+      mockRepository.find.mockResolvedValue([]);
+
+      const result = await service.getStudentSubjectAverage('student-uuid', 1);
+
+      expect(result).toBeNull();
+    });
+
+    it('should throw NotFoundException if the student does not exist', async () => {
+      mockStudentRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.getStudentSubjectAverage('unknown-uuid', 1),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if the subject does not exist', async () => {
+      mockSubjectRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.getStudentSubjectAverage('student-uuid', 999),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('isStudentSubjectValidated', () => {
+    it('should return true when the average is above the threshold', async () => {
+      mockRepository.find.mockResolvedValue([
+        { value: 15, assignment: { scale: 20, coefficient: 1 } },
+      ]);
+
+      const result = await service.isStudentSubjectValidated('student-uuid', 1);
+
+      expect(result).toBe(true);
+    });
+
+    it('should return true when the average is exactly the threshold (10/20)', async () => {
+      mockRepository.find.mockResolvedValue([
+        { value: 10, assignment: { scale: 20, coefficient: 1 } },
+      ]);
+
+      const result = await service.isStudentSubjectValidated('student-uuid', 1);
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when the average is below the threshold', async () => {
+      mockRepository.find.mockResolvedValue([
+        { value: 9, assignment: { scale: 20, coefficient: 1 } },
+      ]);
+
+      const result = await service.isStudentSubjectValidated('student-uuid', 1);
+
+      expect(result).toBe(false);
+    });
+
+    it('should return null when there is no grade to judge', async () => {
+      mockRepository.find.mockResolvedValue([]);
+
+      const result = await service.isStudentSubjectValidated('student-uuid', 1);
+
+      expect(result).toBeNull();
     });
   });
 });

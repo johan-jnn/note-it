@@ -60,3 +60,5 @@ database/*.db
 
 package-lock.json
 bun.lock
+
+!.project

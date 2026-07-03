@@ -5,10 +5,14 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
+  Min,
 } from 'class-validator';
 
 export class CreateGradeDto {
   @IsNumber()
+  @Min(0)
+  @Max(20)
   @IsNotEmpty()
   value: number;
 

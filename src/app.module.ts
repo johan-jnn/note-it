@@ -6,7 +6,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { ClassesModule } from './classes/classes.module';
-import { FrontendModule } from './frontend/frontend.module';
 import { GradesModule } from './grades/grades.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { SubjectsModule } from './subjects/subjects.module';
@@ -20,7 +19,6 @@ import { SubjectsModule } from './subjects/subjects.module';
     LessonsModule,
     AssignmentsModule,
     GradesModule,
-    FrontendModule,
   ],
   controllers: [AppController],
   providers: [AppService],

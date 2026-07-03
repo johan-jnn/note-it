@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import {
@@ -13,6 +12,7 @@
     type Lesson,
     type Subject,
   } from '$lib/api';
+  import { onMount } from 'svelte';
 
   const id = Number(page.params.id);
 
@@ -46,7 +46,8 @@
       teacherId = item.teacher.id;
       subjectId = item.subject.id;
     } catch (e) {
-      error = e instanceof ApiError ? e.message : 'Échec du chargement du cours';
+      error =
+        e instanceof ApiError ? e.message : 'Échec du chargement du cours';
     } finally {
       loading = false;
     }
@@ -64,7 +65,10 @@
         subjectId: subjectId ?? undefined,
       });
     } catch (err) {
-      error = err instanceof ApiError ? err.message : 'Échec de la mise à jour du cours';
+      error =
+        err instanceof ApiError
+          ? err.message
+          : 'Échec de la mise à jour du cours';
     } finally {
       saving = false;
     }
@@ -76,7 +80,10 @@
       await lessonsApi.remove(id);
       goto('/lessons');
     } catch (err) {
-      error = err instanceof ApiError ? err.message : 'Échec de la suppression du cours';
+      error =
+        err instanceof ApiError
+          ? err.message
+          : 'Échec de la suppression du cours';
     }
   }
 </script>
@@ -95,7 +102,12 @@
   <form class="entity-form" onsubmit={submit}>
     <div class="field">
       <label for="name">Nom (optionnel)</label>
-      <input id="name" type="text" bind:value={name} />
+      <input
+        id="name"
+        type="text"
+        placeholder={subjects.find((s) => s.id === subjectId)?.name}
+        bind:value={name}
+      />
     </div>
 
     <div class="field">
@@ -120,7 +132,9 @@
       <label for="teacherId">Enseignant</label>
       <select id="teacherId" bind:value={teacherId} required>
         {#each teachers as t (t.id)}
-          <option value={t.id}>{t.profile.first_name} {t.profile.last_name}</option>
+          <option value={t.id}
+            >{t.profile.first_name} {t.profile.last_name}</option
+          >
         {/each}
       </select>
     </div>
@@ -129,11 +143,16 @@
       <button class="button" type="submit" disabled={saving}>
         {saving ? 'Enregistrement…' : 'Enregistrer'}
       </button>
-      <button class="button danger" type="button" onclick={remove}>Supprimer</button>
+      <button class="button danger" type="button" onclick={remove}
+        >Supprimer</button
+      >
     </div>
   </form>
 
-  <p class="meta">Enseignant : {item.teacher.first_name} {item.teacher.last_name}</p>
+  <p class="meta">
+    Enseignant : {item.teacher.first_name}
+    {item.teacher.last_name}
+  </p>
 
   <p class="meta">
     Créé le {new Date(item.created_at).toLocaleString()} · Modifié le {new Date(

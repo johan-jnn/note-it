@@ -2,10 +2,12 @@ import {
   IsDateString,
   IsInt,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
+  Min,
 } from 'class-validator';
+import { IsAfterDate } from '../../common/validators/is-after-date.validator';
 
 export class CreateAssignmentDto {
   @IsString()
@@ -18,13 +20,17 @@ export class CreateAssignmentDto {
 
   @IsDateString()
   @IsOptional()
+  @IsAfterDate('begin_date', {
+    message: 'end_date must be after begin_date',
+  })
   end_date?: Date;
 
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @IsNotEmpty()
   scale: number;
 
-  @IsNumber()
+  @IsPositive()
   @IsOptional()
   coefficient?: number;
 

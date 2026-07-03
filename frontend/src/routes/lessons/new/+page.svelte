@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import {
     ApiError,
@@ -11,6 +10,7 @@
     type Class,
     type Subject,
   } from '$lib/api';
+  import { onMount } from 'svelte';
 
   let name = $state('');
   let classId = $state<number | null>(null);
@@ -31,7 +31,10 @@
         accountsApi.listTeachers(),
       ]);
     } catch (e) {
-      error = e instanceof ApiError ? e.message : 'Échec du chargement des classes/matières/enseignants';
+      error =
+        e instanceof ApiError
+          ? e.message
+          : 'Échec du chargement des classes/matières/enseignants';
     }
   });
 
@@ -48,7 +51,8 @@
       });
       goto(`/lessons/${created.id}`);
     } catch (err) {
-      error = err instanceof ApiError ? err.message : 'Échec de la création du cours';
+      error =
+        err instanceof ApiError ? err.message : 'Échec de la création du cours';
     } finally {
       saving = false;
     }
@@ -65,7 +69,12 @@
 <form class="entity-form" onsubmit={submit}>
   <div class="field">
     <label for="name">Nom (optionnel)</label>
-    <input id="name" type="text" bind:value={name} />
+    <input
+      id="name"
+      type="text"
+      placeholder={subjects.find((s) => s.id === subjectId)?.name}
+      bind:value={name}
+    />
   </div>
 
   <div class="field">
@@ -93,7 +102,9 @@
     <select id="teacherId" bind:value={teacherId} required>
       <option value="" disabled selected>Sélectionner un enseignant</option>
       {#each teachers as t (t.id)}
-        <option value={t.id}>{t.profile.first_name} {t.profile.last_name}</option>
+        <option value={t.id}
+          >{t.profile.first_name} {t.profile.last_name}</option
+        >
       {/each}
     </select>
   </div>

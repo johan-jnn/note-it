@@ -3,9 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Assignment } from '../assignments/entities/assignment.entity';
 import { Student } from '../accounts/entities/student.entity';
+import { Subject } from '../subjects/entities/subject.entity';
 import { CreateGradeDto } from './dto/create-grade.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
 import { Grade } from './entities/grade.entity';
+import {
+  computeWeightedAverage,
+  isSubjectValidated,
+} from './grade-average.util';
 
 const GRADE_RELATIONS = { assignment: true, student: true };
 
@@ -18,6 +23,8 @@ export class GradesService {
     private readonly assignmentRepository: Repository<Assignment>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Subject)
+    private readonly subjectRepository: Repository<Subject>,
   ) {}
 
   private async findAssignmentOrFail(id: number): Promise<Assignment> {
@@ -36,6 +43,14 @@ export class GradesService {
       throw new NotFoundException(`Student with ID ${id} not found`);
     }
     return student;
+  }
+
+  private async findSubjectOrFail(id: number): Promise<Subject> {
+    const subject = await this.subjectRepository.findOne({ where: { id } });
+    if (!subject) {
+      throw new NotFoundException(`Subject with ID ${id} not found`);
+    }
+    return subject;
   }
 
   async create(createGradeDto: CreateGradeDto): Promise<Grade> {
@@ -83,5 +98,42 @@ export class GradesService {
   async remove(id: number): Promise<void> {
     const existingGrade = await this.findOne(id);
     await this.gradeRepository.remove(existingGrade);
+  }
+
+  /**
+   * Weighted average (normalized on /20, weighted by assignment coefficient)
+   * of a student's grades for a given subject. Returns null if the student
+   * has no grade yet for that subject.
+   */
+  async getStudentSubjectAverage(
+    studentId: string,
+    subjectId: number,
+  ): Promise<number | null> {
+    await this.findStudentOrFail(studentId);
+    await this.findSubjectOrFail(subjectId);
+
+    const grades = await this.gradeRepository.find({
+      where: {
+        student: { id: studentId },
+        assignment: { lesson: { subject: { id: subjectId } } },
+      },
+      relations: { assignment: true },
+    });
+
+    return computeWeightedAverage(grades);
+  }
+
+  /**
+   * Whether a student validates a subject, based on the subject average
+   * threshold (see `SUBJECT_VALIDATION_THRESHOLD`). Returns null if there is
+   * no average to judge yet (no grades).
+   */
+  async isStudentSubjectValidated(
+    studentId: string,
+    subjectId: number,
+    threshold?: number,
+  ): Promise<boolean | null> {
+    const average = await this.getStudentSubjectAverage(studentId, subjectId);
+    return isSubjectValidated(average, threshold);
   }
 }
